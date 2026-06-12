@@ -6,29 +6,26 @@ const { requireAuth, JWT_SECRET } = require('../middleware/auth');
 
 const router = express.Router();
 
+const OWNER_EMAIL = 'cjventura229822@yahoo.com';
+
 router.post('/register', async (req, res) => {
-  const { email, password, name, role } = req.body;
+  const { email, password, name } = req.body;
+
   if (!email || !password || !name) {
     return res.status(400).json({ error: 'Email, password, and name are required' });
-  }
-  if (!['trader', 'follower'].includes(role)) {
-    return res.status(400).json({ error: 'Role must be trader or follower' });
   }
   if (password.length < 8) {
     return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
+
+  // Everyone registers as a follower — only the owner can be a trader
+  const role = 'follower';
 
   try {
     const hash = await bcrypt.hash(password, 10);
     const result = db.prepare(
       'INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)'
     ).run(email.toLowerCase().trim(), hash, name.trim(), role);
-
-    if (role === 'trader') {
-      db.prepare(
-        'INSERT INTO trader_profiles (user_id) VALUES (?)'
-      ).run(result.lastInsertRowid);
-    }
 
     const user = db.prepare('SELECT id, email, name, role FROM users WHERE id = ?').get(result.lastInsertRowid);
     const token = jwt.sign({ id: user.id, email: user.email, name: user.name, role: user.role }, JWT_SECRET, { expiresIn: '7d' });

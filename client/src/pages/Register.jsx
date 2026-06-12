@@ -1,19 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Register() {
-  const [form, setForm] = useState({ email: '', password: '', name: '', role: 'follower' });
+  const [form, setForm] = useState({ email: '', password: '', name: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-
-  useEffect(() => {
-    if (params.get('role') === 'trader') setForm(f => ({ ...f, role: 'trader' }));
-  }, [params]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -23,8 +18,8 @@ export default function Register() {
     setError('');
     setLoading(true);
     try {
-      const user = await register(form.email, form.password, form.name, form.role);
-      navigate(user.role === 'trader' ? '/dashboard' : '/traders');
+      await register(form.email, form.password, form.name, 'follower');
+      navigate('/traders');
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed');
     } finally {
@@ -36,29 +31,30 @@ export default function Register() {
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
+          <span className="text-4xl mb-4 block">📈</span>
           <h1 className="text-3xl font-bold text-white mb-2">Join Dynasty Signals</h1>
-          <p className="text-gray-500">Create your account and start today</p>
+          <p className="text-gray-500">Get access to real-time trade signals from Carlos Ventura</p>
+        </div>
+
+        {/* What you get */}
+        <div className="card mb-6 bg-brand-500/5 border-brand-500/20">
+          <p className="text-xs text-brand-400 font-semibold uppercase tracking-wider mb-3">What You Get</p>
+          <ul className="space-y-2">
+            {[
+              'Real-time BUY/SELL/HOLD signals',
+              'Entry price, target & stop loss on every trade',
+              'Full trade history & performance stats',
+              'Direct access to the #1 ranked signal provider',
+            ].map(item => (
+              <li key={item} className="flex items-center gap-2 text-sm text-gray-300">
+                <span className="text-brand-500">✓</span> {item}
+              </li>
+            ))}
+          </ul>
         </div>
 
         <form onSubmit={handleSubmit} className="card space-y-4">
           {error && <div className="bg-red-900/30 border border-red-800 rounded-lg px-4 py-3 text-red-400 text-sm">{error}</div>}
-
-          {/* Role Toggle */}
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1.5">I want to</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button type="button"
-                onClick={() => set('role', 'follower')}
-                className={`py-3 px-4 rounded-lg border text-sm font-medium transition-colors ${form.role === 'follower' ? 'bg-brand-500/20 border-brand-500 text-brand-400' : 'bg-dark-700 border-gray-700 text-gray-400 hover:border-gray-600'}`}>
-                📊 Follow Traders
-              </button>
-              <button type="button"
-                onClick={() => set('role', 'trader')}
-                className={`py-3 px-4 rounded-lg border text-sm font-medium transition-colors ${form.role === 'trader' ? 'bg-brand-500/20 border-brand-500 text-brand-400' : 'bg-dark-700 border-gray-700 text-gray-400 hover:border-gray-600'}`}>
-                🎯 Publish Signals
-              </button>
-            </div>
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1.5">Full Name</label>
@@ -84,7 +80,7 @@ export default function Register() {
           </label>
 
           <button type="submit" className="btn-primary w-full" disabled={loading || !agreed}>
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? 'Creating account...' : 'Create Free Account'}
           </button>
 
           <p className="text-center text-sm text-gray-500">

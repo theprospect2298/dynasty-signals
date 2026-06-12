@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const stats = [
-  { label: 'Active Signal Providers', value: '200+' },
-  { label: 'Avg. Win Rate', value: '68%' },
-  { label: 'Signals Published', value: '12,400+' },
+  { label: 'Years Experience', value: '10+' },
+  { label: 'Win Rate', value: '72%' },
+  { label: 'Signals Published', value: '500+' },
   { label: 'Subscriber Returns', value: '94% YTD' },
 ];
 
@@ -132,8 +132,8 @@ export default function Landing() {
           <h2 className="text-3xl font-bold text-white mb-4">Ready to Elevate Your Trading?</h2>
           <p className="text-gray-500 mb-8">Join thousands of traders already using Dynasty Signals. Or become a signal provider and monetize your expertise.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/register" className="btn-primary px-8 py-3 text-base">Subscribe as Follower</Link>
-            <Link to="/register?role=trader" className="btn-secondary px-8 py-3 text-base">Become a Signal Provider</Link>
+            <Link to="/register" className="btn-primary px-8 py-3 text-base">Create Free Account →</Link>
+            <Link to="/traders" className="btn-secondary px-8 py-3 text-base">View Signal Provider</Link>
           </div>
         </div>
       </section>
