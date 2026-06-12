@@ -7,7 +7,7 @@ const router = express.Router();
 // List all verified traders (public)
 router.get('/', (req, res) => {
   const traders = db.prepare(`
-    SELECT tp.id, tp.bio, tp.strategy, tp.verified, tp.subscription_price,
+    SELECT tp.id, tp.bio, tp.strategy, tp.verified, tp.official, tp.subscription_price,
            tp.total_return, tp.win_rate, tp.trade_count, tp.followers_count,
            u.name, u.email
     FROM trader_profiles tp
