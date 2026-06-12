@@ -50,7 +50,7 @@ function genMesh(x0, y0, w, h, seed, step = 46) {
 }
 
 const BULL_MESH = genMesh(80, 130, 420, 350, 7);
-const BEAR_MESH = genMesh(680, 90, 440, 390, 13);
+const BEAR_MESH = genMesh(640, 130, 440, 344, 13);
 
 // Faceted ground strip
 const GROUND = (() => {
@@ -69,22 +69,32 @@ const GROUND = (() => {
 
 // Angular low-poly silhouettes
 const BULL_PATH = `M 110 205 L 168 186 L 232 170 L 296 154 L 332 150
-L 362 162 L 384 196 L 404 222 L 430 262 L 450 296 L 468 330
-L 452 346 L 424 338 L 400 332 L 380 360 L 366 382
+L 362 162 L 384 196 L 404 222
+L 426 252 L 446 282 L 462 310 L 468 332 L 456 348 L 432 346 L 410 334 L 396 330
+L 380 360 L 366 382
 L 376 414 L 388 462 L 366 463 L 356 416 L 348 388
 L 334 408 L 327 461 L 305 461 L 300 402 L 290 392
 L 248 392 L 208 391 L 188 422 L 184 466 L 162 466 L 152 424 L 142 398
 L 126 372 L 114 318 L 107 262 Z`;
 
-const BEAR_PATH = `M 700 206 L 720 176 L 757 151 L 770 144
-L 766 114 L 788 132 L 806 128 L 814 126 L 822 102 L 838 126
-L 872 142 L 908 158 L 956 168 L 1004 174 L 1052 186
-L 1078 214 L 1088 252 L 1093 318 L 1084 364 L 1096 424 L 1093 460
-L 1044 460 L 1054 420 L 1034 376 L 1006 388 L 944 398 L 906 396
-L 874 398 L 869 432 L 879 459 L 821 459 L 831 419 L 843 379
-L 822 342 L 809 323 L 787 366 L 753 392 L 735 398
-L 757 363 L 783 331 L 793 301 L 777 281 L 753 272 L 717 255
-L 749 233 L 723 213 Z`;
+// Bear: grizzly profile — hump highest point, head lower, blunt open
+// roaring muzzle, small ears, heavy belly, four stocky legs
+const BEAR_PATH = `M 870 140
+L 950 178 L 1030 196
+L 1056 232 L 1064 268 L 1058 330
+L 1030 392 L 1018 428 L 1010 460
+L 944 460 L 950 444 L 956 412 L 962 388
+L 952 394 L 900 398
+L 854 390 L 846 408 L 852 460
+L 802 460 L 806 436 L 812 384
+L 786 380 L 782 410 L 790 460
+L 734 460 L 732 452 L 738 436 L 740 410 L 744 366
+L 738 330 L 746 292
+L 724 296 L 706 298 L 664 286
+L 702 254 L 650 244
+L 652 232 L 672 222 L 700 208 L 716 196 L 744 178
+L 764 162 L 772 142 L 784 146 L 790 168
+L 800 162 Z`;
 
 const TICKERS = [
   { x: 170, y: 118, t: '▲ +40.66', c: '#4ade80', d: 0 },
@@ -111,8 +121,8 @@ export default function BullBearScene() {
     const update = () => {
       raf.current = null;
       const v = Math.min(1, Math.max(0, window.scrollY / 520));
-      if (bullRef.current) bullRef.current.style.transform = `translate(${v * 85}px, ${v * 10}px) rotate(${v * 4.5}deg)`;
-      if (bearRef.current) bearRef.current.style.transform = `translate(${-v * 85}px, ${v * 10}px) rotate(${-v * 4.5}deg)`;
+      if (bullRef.current) bullRef.current.style.transform = `translate(${v * 80}px, ${v * 10}px) rotate(${v * 4.5}deg)`;
+      if (bearRef.current) bearRef.current.style.transform = `translate(${-v * 80}px, ${v * 10}px) rotate(${-v * 4.5}deg)`;
       if (clashRef.current) {
         const c = Math.max(0, (v - 0.65) / 0.35);
         clashRef.current.style.opacity = c;
@@ -163,7 +173,7 @@ export default function BullBearScene() {
 
         {/* Aura glows behind each animal */}
         <ellipse cx="290" cy="310" rx="260" ry="180" fill="url(#aura)" />
-        <ellipse cx="900" cy="290" rx="270" ry="190" fill="url(#aura)" />
+        <ellipse cx="880" cy="300" rx="270" ry="185" fill="url(#aura)" />
 
         {/* Scatter crosses + dashed scan lines */}
         {CROSSES.map(([x, y], i) => (
@@ -172,8 +182,8 @@ export default function BullBearScene() {
             <line x1={x} y1={y - 5} x2={x} y2={y + 5} />
           </g>
         ))}
-        <line x1="455" y1="295" x2="745" y2="295" stroke="#5eead4" strokeOpacity="0.12" strokeDasharray="3 9" />
-        <line x1="600" y1="120" x2="600" y2="420" stroke="#5eead4" strokeOpacity="0.08" strokeDasharray="2 10" />
+        <line x1="478" y1="290" x2="642" y2="290" stroke="#5eead4" strokeOpacity="0.12" strokeDasharray="3 9" />
+        <line x1="560" y1="130" x2="560" y2="420" stroke="#5eead4" strokeOpacity="0.08" strokeDasharray="2 10" />
 
         {/* ── BULL (scroll-driven charge →) ── */}
         <g ref={bullRef} style={{ transformBox: 'fill-box', transformOrigin: '70% 80%', willChange: 'transform' }}>
@@ -196,8 +206,8 @@ export default function BullBearScene() {
             <path d="M 112 212 C 96 192, 84 174, 80 154 C 76 166, 80 190, 92 208 Z" fill="#0e7490" opacity="0.7" />
             <path d="M 80 154 L 70 134 L 88 146 Z" fill="#2dd4bf" opacity="0.7" />
             {/* Eye + nostril */}
-            <circle cx="416" cy="254" r="3" fill="#d8fff7" filter="url(#glowF)" />
-            <circle cx="452" cy="324" r="2" fill="#021018" opacity="0.85" />
+            <circle cx="418" cy="256" r="3" fill="#d8fff7" filter="url(#glowF)" />
+            <circle cx="456" cy="334" r="2" fill="#021018" opacity="0.85" />
           </g>
         </g>
 
@@ -214,30 +224,31 @@ export default function BullBearScene() {
               ))}
             </g>
             <path d={BEAR_PATH} fill="none" stroke="#5eead4" strokeOpacity="0.55" strokeWidth="1.4" strokeLinejoin="round" />
-            {/* Teeth */}
-            <path d="M 712 211 L 717 224 L 723 213 Z" fill="#d8fff7" opacity="0.9" />
-            <path d="M 726 216 L 731 227 L 736 218 Z" fill="#d8fff7" opacity="0.85" />
-            <path d="M 724 250 L 729 238 L 735 249 Z" fill="#d8fff7" opacity="0.85" />
-            {/* Claws — raised paw */}
-            <path d="M 735 398 L 714 395 L 733 405 Z" fill="#d8fff7" opacity="0.9" />
-            <path d="M 733 405 L 715 410 L 734 412 Z" fill="#d8fff7" opacity="0.85" />
-            <path d="M 734 412 L 718 422 L 737 419 Z" fill="#d8fff7" opacity="0.8" />
-            {/* Claws — planted paw */}
-            <path d="M 824 459 L 808 464 L 826 466 Z" fill="#aef5e8" opacity="0.7" />
-            <path d="M 836 459 L 822 466 L 840 466 Z" fill="#aef5e8" opacity="0.6" />
-            {/* Eye + roar breath */}
-            <circle cx="737" cy="196" r="3" fill="#d8fff7" filter="url(#glowF)" />
-            <circle cx="686" cy="216" r="2" fill="#7ff0dc" opacity="0.4" className="tick" style={{ animationDelay: '0.4s' }} />
-            <circle cx="672" cy="228" r="1.5" fill="#7ff0dc" opacity="0.3" className="tick" style={{ animationDelay: '1.6s' }} />
-            <circle cx="664" cy="206" r="1" fill="#7ff0dc" opacity="0.3" className="tick" style={{ animationDelay: '2.4s' }} />
+            {/* Far ear */}
+            <path d="M 802 160 L 812 146 L 824 160 Z" fill="#2dd4bf" opacity="0.55" />
+            {/* Teeth in the open jaw */}
+            <path d="M 686 252 L 692 266 L 698 253 Z" fill="#d8fff7" opacity="0.9" />
+            <path d="M 672 280 L 678 268 L 684 281 Z" fill="#d8fff7" opacity="0.85" />
+            {/* Claws — front paws + hind paw */}
+            <path d="M 734 460 L 718 462 L 735 465 Z" fill="#d8fff7" opacity="0.85" />
+            <path d="M 744 461 L 730 465 L 746 466 Z" fill="#d8fff7" opacity="0.75" />
+            <path d="M 802 460 L 788 463 L 803 465 Z" fill="#aef5e8" opacity="0.7" />
+            <path d="M 944 460 L 930 462 L 945 465 Z" fill="#aef5e8" opacity="0.7" />
+            {/* Eye + nose */}
+            <circle cx="700" cy="214" r="3" fill="#d8fff7" filter="url(#glowF)" />
+            <circle cx="656" cy="238" r="2.2" fill="#021018" opacity="0.85" />
+            {/* Roar breath */}
+            <circle cx="636" cy="258" r="2" fill="#7ff0dc" opacity="0.4" className="tick" style={{ animationDelay: '0.4s' }} />
+            <circle cx="624" cy="272" r="1.5" fill="#7ff0dc" opacity="0.3" className="tick" style={{ animationDelay: '1.6s' }} />
+            <circle cx="630" cy="240" r="1" fill="#7ff0dc" opacity="0.3" className="tick" style={{ animationDelay: '2.4s' }} />
           </g>
         </g>
 
         {/* ── Clash spark (builds as they converge) ── */}
         <g ref={clashRef} style={{ opacity: 0, transformBox: 'fill-box', transformOrigin: 'center', willChange: 'transform, opacity' }}>
-          <circle cx="600" cy="320" r="52" fill="url(#clashGrad)" />
-          <path d="M 594 296 L 604 318 L 588 324 L 606 348" stroke="#d8fff7" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M 616 304 L 602 322 L 618 330" stroke="#aef5e8" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="560" cy="290" r="52" fill="url(#clashGrad)" />
+          <path d="M 554 266 L 564 288 L 548 294 L 566 318" stroke="#d8fff7" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M 576 274 L 562 292 L 578 300" stroke="#aef5e8" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
         </g>
 
         {/* ── Ground ── */}
