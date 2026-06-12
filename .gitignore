@@ -6,3 +6,4 @@ client/dist/
 *.db-shm
 *.db-wal
 npm-debug.log*
+server/vapid.json

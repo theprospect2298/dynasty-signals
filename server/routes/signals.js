@@ -85,6 +85,11 @@ router.post('/', ...requireRole('trader'), (req, res) => {
   `).run(profile.id, asset.toUpperCase(), action.toUpperCase(), entry_price || null, target_price || null, stop_loss || null, timeframe || 'Swing', rationale || '');
 
   const signal = db.prepare('SELECT * FROM signals WHERE id = ?').get(result.lastInsertRowid);
+
+  // Fan out: live popup (SSE) + browser push + email to all active subscribers
+  const { notifyNewSignal } = require('../notifications');
+  notifyNewSignal(signal, profile.id, req.user).catch(err => console.error('[notify]', err.message));
+
   res.status(201).json(signal);
 });
 

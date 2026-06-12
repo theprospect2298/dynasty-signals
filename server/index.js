@@ -9,11 +9,15 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Real-time signal stream (SSE) — must be registered before the signals router
+app.get('/api/signals/stream', require('./notifications').sseHandler);
+
 // API routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/traders', require('./routes/traders'));
 app.use('/api/signals', require('./routes/signals'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
+app.use('/api/push', require('./routes/push'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', app: 'Dynasty Signals' }));

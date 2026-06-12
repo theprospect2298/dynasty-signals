@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SignalAlertProvider } from './context/SignalAlertContext';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -47,7 +48,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <SignalAlertProvider>
+          <AppRoutes />
+        </SignalAlertProvider>
       </AuthProvider>
     </BrowserRouter>
   );
