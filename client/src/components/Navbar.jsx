@@ -35,7 +35,11 @@ export default function Navbar() {
                 <div className="flex items-center gap-3 pl-4 border-l border-gray-700">
                   <span className="text-sm text-gray-400">
                     <span className="text-white font-medium">{user.name.split(' ')[0]}</span>
-                    <span className="ml-1.5 text-xs bg-dark-700 text-brand-400 px-2 py-0.5 rounded-full border border-brand-900 capitalize">{user.role}</span>
+                    {user.email === 'cjventura229822@yahoo.com' ? (
+                      <span className="ml-1.5 text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full border border-yellow-500/40 font-bold">👑 Owner</span>
+                    ) : (
+                      <span className="ml-1.5 text-xs bg-dark-700 text-brand-400 px-2 py-0.5 rounded-full border border-brand-900 capitalize">{user.role}</span>
+                    )}
                   </span>
                   <button onClick={handleLogout} className="text-xs text-gray-500 hover:text-red-400 transition-colors">
                     Sign out

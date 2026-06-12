@@ -22,6 +22,7 @@ db.exec(`
     bio TEXT DEFAULT '',
     strategy TEXT DEFAULT '',
     verified INTEGER DEFAULT 0,
+    official INTEGER DEFAULT 0,
     subscription_price REAL DEFAULT 9.99,
     total_return REAL DEFAULT 0,
     win_rate REAL DEFAULT 0,
@@ -79,6 +80,32 @@ db.exec(`
   );
 `);
 
+// Run migrations safely
+try { db.exec(`ALTER TABLE trader_profiles ADD COLUMN official INTEGER DEFAULT 0`); } catch {}
+
+// ── Promote official owner account ──────────────────────────────────────────
+const OWNER_EMAIL = 'cjventura229822@yahoo.com';
+
+const ownerUser = db.prepare('SELECT * FROM users WHERE email = ?').get(OWNER_EMAIL);
+if (ownerUser) {
+  // Make sure they are a trader
+  db.prepare(`UPDATE users SET role = 'trader' WHERE email = ?`).run(OWNER_EMAIL);
+
+  // Create trader profile if missing
+  const existing = db.prepare('SELECT id FROM trader_profiles WHERE user_id = ?').get(ownerUser.id);
+  if (!existing) {
+    db.prepare(`INSERT INTO trader_profiles (user_id, verified, official, subscription_price, bio, strategy)
+                VALUES (?, 1, 1, 29.99, ?, ?)`).run(
+      ownerUser.id,
+      'Founder & Head Trader of Dynasty Signals. Professional trader with a decade of experience across equities, crypto, and derivatives.',
+      'High-conviction swing trades and position trades. Focused on asymmetric risk/reward setups with strong fundamental and technical confluence.'
+    );
+  } else {
+    db.prepare(`UPDATE trader_profiles SET verified = 1, official = 1, subscription_price = 29.99 WHERE user_id = ?`).run(ownerUser.id);
+  }
+  console.log(`[DB] ✅ Owner account promoted: ${OWNER_EMAIL}`);
+}
+
 // Seed demo data if empty
 const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get();
 if (userCount.c === 0) {
@@ -89,8 +116,8 @@ if (userCount.c === 0) {
     'INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)'
   );
   const insertProfile = db.prepare(
-    `INSERT INTO trader_profiles (user_id, bio, strategy, verified, subscription_price, total_return, win_rate, trade_count)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO trader_profiles (user_id, bio, strategy, verified, official, subscription_price, total_return, win_rate, trade_count)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const insertSignal = db.prepare(
     `INSERT INTO signals (trader_id, asset, action, entry_price, target_price, stop_loss, timeframe, rationale, status, result, profit_loss_pct)
@@ -107,7 +134,7 @@ if (userCount.c === 0) {
 
   traders.forEach((t, i) => {
     const user = insertUser.run(t.email, hash, t.name, 'trader');
-    const profile = insertProfile.run(user.lastInsertRowid, t.bio, t.strategy, 1, t.price, t.ret, t.wr, t.trades);
+    const profile = insertProfile.run(user.lastInsertRowid, t.bio, t.strategy, 1, 0, t.price, t.ret, t.wr, t.trades);
     const tid = profile.lastInsertRowid;
 
     const sampleSignals = [

@@ -13,9 +13,11 @@ function TraderCard({ trader }) {
             {trader.name[0]}
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-bold text-white">{trader.name}</h3>
-              {trader.verified ? (
+              {trader.official ? (
+                <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/40 font-bold">👑 Official</span>
+              ) : trader.verified ? (
                 <span className="text-xs bg-brand-500/20 text-brand-400 px-1.5 py-0.5 rounded border border-brand-500/30">✓ Verified</span>
               ) : null}
             </div>

@@ -76,7 +76,14 @@ export default function TraderProfile() {
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3 mb-2">
               <h1 className="text-2xl font-bold text-white">{trader.name}</h1>
-              {trader.verified && <span className="text-xs bg-brand-500/20 text-brand-400 px-2 py-0.5 rounded border border-brand-500/30">✓ Verified Provider</span>}
+              {trader.official ? (
+                <>
+                  <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded border border-yellow-500/40 font-bold">👑 Official Dynasty Signals</span>
+                  <span className="text-xs bg-brand-500/20 text-brand-400 px-2 py-0.5 rounded border border-brand-500/30">✓ Verified</span>
+                </>
+              ) : trader.verified ? (
+                <span className="text-xs bg-brand-500/20 text-brand-400 px-2 py-0.5 rounded border border-brand-500/30">✓ Verified Provider</span>
+              ) : null}
             </div>
             <p className="text-gray-400 mb-3">{trader.bio}</p>
             <p className="text-sm text-gray-500 italic">"{trader.strategy}"</p>

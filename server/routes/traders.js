@@ -12,7 +12,7 @@ router.get('/', (req, res) => {
            u.name, u.email
     FROM trader_profiles tp
     JOIN users u ON tp.user_id = u.id
-    ORDER BY tp.total_return DESC
+    ORDER BY tp.official DESC, tp.total_return DESC
   `).all();
   res.json(traders);
 });
