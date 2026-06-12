@@ -52,6 +52,28 @@
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #111813; }
-::-webkit-scrollbar-thumb { background: #2d3d34; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #4ade80; }
+::-webkit-scrollbar-track { background: #071018; }
+::-webkit-scrollbar-thumb { background: #1d2f3d; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2dd4bf; }
+
+/* ── Bull/Bear scene animations ─────────────────────────── */
+@keyframes sceneBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+@keyframes tickFloat {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(-8px); opacity: 0.95; }
+}
+@keyframes nodePulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+.bob-a { animation: sceneBob 4.2s ease-in-out infinite; }
+.bob-b { animation: sceneBob 5.1s ease-in-out 0.6s infinite; }
+.tick { animation: tickFloat 5s ease-in-out infinite; }
+.node-pulse { animation: nodePulse 2.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bob-a, .bob-b, .tick, .node-pulse { animation: none; }
+}
