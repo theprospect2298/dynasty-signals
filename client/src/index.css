@@ -118,3 +118,39 @@
 @media (prefers-reduced-motion: reduce) {
   .signal-alert-in, .signal-alert-out, .alert-ping, .alert-glow-teal, .alert-glow-red, .alert-shimmer { animation: none; }
 }
+
+/* ── Futuristic dashboard FX ─────────────────────────────── */
+.holo-grid {
+  background-image:
+    linear-gradient(rgba(45,212,191,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45,212,191,0.07) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+@keyframes dashScan {
+  0%   { transform: translateY(-70px); opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translateY(180px); opacity: 0; }
+}
+.dash-scan {
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 70px;
+  background: linear-gradient(to bottom, rgba(45,212,191,0.12), transparent);
+  animation: dashScan 5s linear infinite;
+  pointer-events: none;
+}
+@keyframes borderPulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(45,212,191,0.18), 0 0 22px -8px rgba(45,212,191,0.25); }
+  50%      { box-shadow: 0 0 0 1px rgba(45,212,191,0.4), 0 0 34px -6px rgba(45,212,191,0.45); }
+}
+.glow-border { animation: borderPulse 3.5s ease-in-out infinite; }
+@keyframes livePulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50%      { opacity: 1; transform: scale(1.2); }
+}
+.live-dot { animation: livePulse 1.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-scan, .glow-border, .live-dot { animation: none; }
+}

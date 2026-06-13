@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import SignalCard from '../components/SignalCard';
+import StatTile from '../components/StatTile';
 
 function PublishSignalModal({ onClose, onPublished }) {
   const [form, setForm] = useState({ asset: '', action: 'BUY', entry_price: '', target_price: '', stop_loss: '', timeframe: 'Swing', rationale: '' });
@@ -257,48 +258,55 @@ export default function TraderDashboard() {
       {showPublish && <PublishSignalModal onClose={() => setShowPublish(false)} onPublished={handlePublished} />}
       {closingSignal && <CloseSignalModal signal={closingSignal} onClose={() => setClosingSignal(null)} onClosed={handleClosed} />}
 
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Trader Dashboard</h1>
-          <p className="text-gray-500 text-sm mt-1">Welcome back, {user.name}</p>
+      {/* Holographic header */}
+      <div className="relative mb-8 rounded-2xl border border-gray-800 overflow-hidden">
+        <div className="absolute inset-0 holo-grid opacity-60" />
+        <div className="absolute -top-12 -right-12 w-52 h-52 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-brand-400 via-cyan-400 to-transparent" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6">
+          <div>
+            <p className="text-[11px] font-mono text-brand-400 tracking-[0.3em] uppercase mb-1.5 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-400 live-dot" /> Live Control Center
+            </p>
+            <h1 className="text-2xl font-black text-white">Trader Dashboard</h1>
+            <p className="text-gray-500 text-sm mt-0.5">Welcome back, {user.name}</p>
+          </div>
+          <button onClick={() => setShowPublish(true)} className="btn-primary shadow-[0_0_24px_rgba(45,212,191,0.35)] hover:shadow-[0_0_34px_rgba(45,212,191,0.5)] transition-shadow self-start sm:self-auto">
+            + Publish Signal
+          </button>
         </div>
-        <button onClick={() => setShowPublish(true)} className="btn-primary">
-          + Publish Signal
-        </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        {[
-          { label: 'Total Return', value: `+${profile.total_return?.toFixed(1)}%`, color: 'text-green-400' },
-          { label: 'Win Rate', value: `${stats.winRate}%`, color: 'text-white' },
-          { label: 'Subscribers', value: stats.activeSubs, color: 'text-white' },
-          { label: 'Your Revenue', value: `$${traderCut.toFixed(2)}/mo`, color: 'text-brand-400' },
-        ].map(s => (
-          <div key={s.label} className="stat-card">
-            <p className={`text-2xl font-black ${s.color} mb-1`}>{s.value}</p>
-            <p className="text-xs text-gray-500">{s.label}</p>
-          </div>
-        ))}
+      {/* 3D stat tiles */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8" style={{ perspective: '1000px' }}>
+        <StatTile label="Total Return" value={profile.total_return || 0} format={v => `+${v.toFixed(1)}%`} color="text-green-400" glow="34,197,94" icon="📈" />
+        <StatTile label="Win Rate" value={stats.winRate || 0} format={v => `${Math.round(v)}%`} color="text-white" glow="45,212,191" icon="🎯" />
+        <StatTile label="Subscribers" value={stats.activeSubs || 0} format={v => `${Math.round(v)}`} color="text-white" glow="56,189,248" icon="👥" />
+        <StatTile label="Your Revenue" value={traderCut || 0} format={v => `$${v.toFixed(2)}/mo`} color="text-brand-400" glow="45,212,191" icon="💰" />
       </div>
 
       {/* Revenue breakdown */}
-      <div className="card mb-8 bg-dark-700/50">
-        <p className="text-sm font-semibold text-white mb-2">Revenue Breakdown (This Month)</p>
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-gray-400">{subscribers.length} subs × ${profile.subscription_price}/mo = <strong className="text-white">${monthlyRevenue.toFixed(2)}</strong></span>
-          <span className="text-gray-600">→</span>
-          <span className="text-gray-400">Platform (15%) = <strong className="text-red-400">-${(monthlyRevenue * 0.15).toFixed(2)}</strong></span>
-          <span className="text-gray-600">→</span>
-          <span className="text-gray-400">Your payout (85%) = <strong className="text-green-400">${traderCut.toFixed(2)}</strong></span>
+      <div className="relative card mb-8 bg-dark-700/50 border-brand-500/20 glow-border overflow-hidden">
+        <div className="dash-scan" />
+        <div className="relative">
+          <p className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
+            <span className="font-mono text-xs text-brand-400">▸</span> Revenue Breakdown · This Month
+          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+            <span className="text-gray-400">{subscribers.length} subs × ${profile.subscription_price}/mo = <strong className="text-white">${monthlyRevenue.toFixed(2)}</strong></span>
+            <span className="text-gray-600">→</span>
+            <span className="text-gray-400">Platform (15%) = <strong className="text-red-400">-${(monthlyRevenue * 0.15).toFixed(2)}</strong></span>
+            <span className="text-gray-600">→</span>
+            <span className="text-gray-400">Your payout (85%) = <strong className="text-green-400">${traderCut.toFixed(2)}</strong></span>
+          </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-dark-800 border border-gray-800 rounded-lg p-1 w-fit">
+      <div className="inline-flex gap-1 mb-6 bg-dark-800/80 backdrop-blur border border-gray-800 rounded-xl p-1">
         {['signals', 'subscribers', 'profile'].map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize ${tab === t ? 'bg-dark-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize ${tab === t ? 'bg-gradient-to-b from-dark-600 to-dark-700 text-white border border-brand-500/30 shadow-[0_0_16px_rgba(45,212,191,0.18)]' : 'text-gray-500 hover:text-gray-300 border border-transparent'}`}>
             {t === 'signals' ? `📡 Signals (${signals.length})` : t === 'subscribers' ? `👥 Subscribers (${subscribers.length})` : '⚙️ Profile'}
           </button>
         ))}
