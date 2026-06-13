@@ -19,6 +19,8 @@ app.use('/api/signals', require('./routes/signals'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
 app.use('/api/push', require('./routes/push'));
 app.use('/api/track-record', require('./routes/stats'));
+app.use('/api/followers', require('./routes/followers'));
+app.use('/api/applications', require('./routes/applications'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', app: 'Dynasty Signals' }));

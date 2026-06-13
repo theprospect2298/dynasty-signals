@@ -46,7 +46,7 @@ export default function SignalFeed() {
       {error ? (
         <div className="card text-center py-10">
           <p className="text-red-400 mb-4">{error}</p>
-          <Link to="/traders" className="btn-secondary text-sm">Browse Traders</Link>
+          <Link to="/subscribe" className="btn-secondary text-sm">Subscribe to Signals</Link>
         </div>
       ) : signals.length === 0 ? (
         <div className="text-center py-20 text-gray-500">No signals published yet</div>

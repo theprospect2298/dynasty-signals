@@ -52,20 +52,35 @@ export default function TrackRecord() {
       </div>
 
       {/* Headline stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
           { label: 'Total Return', value: fmtPct(stats.totalReturn), color: stats.totalReturn >= 0 ? 'text-green-400' : 'text-red-400' },
           { label: 'Win Rate', value: `${stats.winRate}%`, color: 'text-white' },
           { label: 'Closed Trades', value: stats.totalTrades, color: 'text-white' },
           { label: 'Profit Factor', value: stats.profitFactor ?? '—', color: 'text-brand-400' },
+          { label: 'Avg Expectancy / Trade', value: fmtPct(stats.expectancy), color: stats.expectancy >= 0 ? 'text-green-400' : 'text-red-400', hint: 'What you make on an average trade — the single most important edge metric.' },
+          { label: 'Reward : Risk', value: stats.rewardRisk != null ? `${stats.rewardRisk} : 1` : '—', color: 'text-brand-400', hint: 'Average winning trade size vs. average losing trade size.' },
           { label: 'Avg Win', value: fmtPct(stats.avgWin), color: 'text-green-400' },
           { label: 'Avg Loss', value: fmtPct(stats.avgLoss), color: 'text-red-400' },
-          { label: 'Best Trade', value: fmtPct(stats.bestTrade), color: 'text-green-400' },
+        ].map(s => (
+          <div key={s.label} className="stat-card text-center" title={s.hint || ''}>
+            <p className={`text-2xl font-black ${s.color} mb-1`}>{s.value}</p>
+            <p className="text-xs text-gray-500 leading-tight">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Streaks & extremes */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+        {[
+          { label: 'Longest Win Streak', value: `${stats.longestWinStreak}🔥`, color: 'text-green-400' },
+          { label: 'Longest Loss Streak', value: stats.longestLossStreak, color: 'text-red-400' },
           { label: 'Current Win Streak', value: stats.winStreak, color: 'text-yellow-400' },
+          { label: 'Best / Worst Trade', value: `${fmtPct(stats.bestTrade)} / ${fmtPct(stats.worstTrade)}`, color: 'text-white' },
         ].map(s => (
           <div key={s.label} className="stat-card text-center">
-            <p className={`text-2xl font-black ${s.color} mb-1`}>{s.value}</p>
-            <p className="text-xs text-gray-500">{s.label}</p>
+            <p className={`text-xl font-black ${s.color} mb-1`}>{s.value}</p>
+            <p className="text-xs text-gray-500 leading-tight">{s.label}</p>
           </div>
         ))}
       </div>

@@ -31,7 +31,7 @@ export default function FollowerDashboard() {
           <h1 className="text-2xl font-bold text-white">Welcome back, {user.name.split(' ')[0]} 👋</h1>
           <p className="text-gray-500 text-sm mt-1">Your signal feed from {activeSubs.length} active subscriptions</p>
         </div>
-        <Link to="/traders" className="btn-primary text-sm">+ Add Trader</Link>
+        <Link to="/subscribe" className="btn-primary text-sm">+ Subscribe to Signals</Link>
       </div>
 
       {/* Stats row */}
@@ -72,8 +72,8 @@ export default function FollowerDashboard() {
           <div className="card text-center py-16">
             <p className="text-4xl mb-4">📡</p>
             <p className="text-white font-semibold mb-2">No signals yet</p>
-            <p className="text-gray-500 text-sm mb-6">Subscribe to traders to start receiving their signals here.</p>
-            <Link to="/traders" className="btn-primary">Browse Traders</Link>
+            <p className="text-gray-500 text-sm mb-6">Subscribe to start receiving signals here.</p>
+            <Link to="/subscribe" className="btn-primary">Subscribe to Signals</Link>
           </div>
         ) : feed.length === 0 ? (
           <div className="text-center py-16 text-gray-500">Your subscribed traders haven't published any signals yet.</div>
@@ -87,7 +87,7 @@ export default function FollowerDashboard() {
           <div className="card text-center py-16">
             <p className="text-4xl mb-4">🔍</p>
             <p className="text-white font-semibold mb-2">No active subscriptions</p>
-            <Link to="/traders" className="btn-primary mt-4">Browse Traders</Link>
+            <Link to="/subscribe" className="btn-primary mt-4">Subscribe to Signals</Link>
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">

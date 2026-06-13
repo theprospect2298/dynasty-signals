@@ -56,22 +56,48 @@ router.get('/', (req, res) => {
   const sumLosses = losses.reduce((a, s) => a + (s.profit_loss_pct || 0), 0);
   const pls = closed.map(s => s.profit_loss_pct || 0);
 
-  let streak = 0;
+  const round2 = (n) => Math.round(n * 100) / 100;
+
+  // Current win streak (from the most recent trade backward)
+  let currentStreak = 0;
   for (let i = closed.length - 1; i >= 0; i--) {
-    if (closed[i].result === 'win') streak++;
+    if (closed[i].result === 'win') currentStreak++;
     else break;
   }
 
+  // Longest win streak & longest loss streak across the whole history
+  let maxWinStreak = 0, maxLossStreak = 0, curWin = 0, curLoss = 0;
+  for (const s of closed) {
+    if (s.result === 'win') { curWin++; curLoss = 0; if (curWin > maxWinStreak) maxWinStreak = curWin; }
+    else { curLoss++; curWin = 0; if (curLoss > maxLossStreak) maxLossStreak = curLoss; }
+  }
+
+  const avgWin = wins.length ? sumWins / wins.length : 0;
+  const avgLoss = losses.length ? sumLosses / losses.length : 0; // negative
+  const winRateFrac = closed.length ? wins.length / closed.length : 0;
+
+  // Expectancy per trade (%) = probWin*avgWin + probLoss*avgLoss  (== mean P/L per trade)
+  const expectancy = closed.length ? pls.reduce((a, p) => a + p, 0) / closed.length : 0;
+
+  // Realised reward:risk = average win size / average loss size
+  const rewardRisk = avgLoss !== 0 ? Math.abs(avgWin / avgLoss) : null;
+
   const stats = {
     totalTrades: closed.length,
-    winRate: closed.length ? Math.round((wins.length / closed.length) * 100) : 0,
-    totalReturn: Math.round(equity * 100) / 100,
-    avgWin: wins.length ? Math.round((sumWins / wins.length) * 100) / 100 : 0,
-    avgLoss: losses.length ? Math.round((sumLosses / losses.length) * 100) / 100 : 0,
+    wins: wins.length,
+    losses: losses.length,
+    winRate: Math.round(winRateFrac * 100),
+    totalReturn: round2(equity),
+    avgWin: round2(avgWin),
+    avgLoss: round2(avgLoss),
     bestTrade: pls.length ? Math.max(...pls) : 0,
     worstTrade: pls.length ? Math.min(...pls) : 0,
-    profitFactor: sumLosses !== 0 ? Math.round((sumWins / Math.abs(sumLosses)) * 100) / 100 : null,
-    winStreak: streak,
+    profitFactor: sumLosses !== 0 ? round2(sumWins / Math.abs(sumLosses)) : null,
+    expectancy: round2(expectancy),
+    rewardRisk: rewardRisk != null ? round2(rewardRisk) : null,
+    winStreak: currentStreak,
+    longestWinStreak: maxWinStreak,
+    longestLossStreak: maxLossStreak,
   };
 
   res.json({

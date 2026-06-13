@@ -21,8 +21,8 @@ export default function Navbar() {
             <Link to="/track-record" className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
               Track Record
             </Link>
-            <Link to="/traders" className="hidden sm:inline text-gray-400 hover:text-white text-sm font-medium transition-colors">
-              Browse Traders
+            <Link to="/followers" className="hidden sm:inline text-gray-400 hover:text-white text-sm font-medium transition-colors">
+              Community
             </Link>
 
             {user ? (
@@ -45,6 +45,11 @@ export default function Navbar() {
                       <span className="ml-1.5 text-xs bg-dark-700 text-brand-400 px-2 py-0.5 rounded-full border border-brand-900 capitalize">{user.role}</span>
                     )}
                   </span>
+                  {user.email === 'cjventura229822@yahoo.com' && (
+                    <Link to="/admin/applications" title="Provider applications" className="text-gray-500 hover:text-white transition-colors text-sm">
+                      📥
+                    </Link>
+                  )}
                   <Link to="/settings" title="Account settings" className="text-gray-500 hover:text-white transition-colors text-sm">
                     ⚙
                   </Link>

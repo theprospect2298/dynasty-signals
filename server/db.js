@@ -98,6 +98,25 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS provider_applications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    markets TEXT DEFAULT '',
+    experience_years TEXT DEFAULT '',
+    win_rate TEXT DEFAULT '',
+    avg_expectancy TEXT DEFAULT '',
+    avg_rr TEXT DEFAULT '',
+    max_drawdown TEXT DEFAULT '',
+    risk_per_trade TEXT DEFAULT '',
+    track_record_url TEXT DEFAULT '',
+    strategy TEXT DEFAULT '',
+    why TEXT DEFAULT '',
+    proof_urls TEXT DEFAULT '',
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Run migrations safely

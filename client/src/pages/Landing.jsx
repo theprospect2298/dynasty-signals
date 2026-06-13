@@ -284,6 +284,42 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ── BECOME A SIGNAL PROVIDER ─────────────────────────── */}
+      <section className="py-20 px-4 border-t border-gray-800/50">
+        <div className="max-w-4xl mx-auto">
+          <div className="relative rounded-2xl border border-yellow-500/30 bg-gradient-to-br from-yellow-500/5 to-dark-800 overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 rounded-full blur-[80px] pointer-events-none" />
+            <div className="relative p-8 sm:p-10 grid sm:grid-cols-5 gap-8 items-center">
+              <div className="sm:col-span-3">
+                <span className="text-xs font-bold text-yellow-400 uppercase tracking-widest mb-3 block">👑 Invite Only</span>
+                <h2 className="text-2xl sm:text-3xl font-black text-white mb-3 leading-tight">Think You've Got the Edge?<br />Become a Signal Provider.</h2>
+                <p className="text-gray-400 leading-relaxed mb-5">
+                  Dynasty Signals is a curated platform — we only onboard traders with a proven, verifiable track record. If your numbers hold up, you publish to a paying audience and earn from every subscriber.
+                </p>
+                <p className="text-sm text-gray-500 mb-1">To apply, you'll need to provide:</p>
+                <ul className="text-sm text-gray-400 space-y-1.5 mb-6">
+                  {[
+                    'Your verified win rate & average expectancy per trade',
+                    'Proof of your last 3 months of trades (broker statements or verified link)',
+                    'Markets traded, average reward:risk, and max drawdown',
+                  ].map(item => (
+                    <li key={item} className="flex items-start gap-2">
+                      <span className="text-yellow-400 shrink-0 mt-0.5">✓</span> {item}
+                    </li>
+                  ))}
+                </ul>
+                <Link to="/become-provider" className="inline-block font-semibold text-sm px-7 py-3 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-dark-900 transition-colors shadow-[0_0_20px_rgba(234,179,8,0.25)]">
+                  Apply to Publish Signals →
+                </Link>
+              </div>
+              <div className="sm:col-span-2 hidden sm:flex justify-center">
+                <div className="text-[120px] leading-none opacity-80">🏆</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── FINAL CTA ────────────────────────────────────────── */}
       <section className="py-28 px-4 relative overflow-hidden border-t border-gray-800/50">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(45,212,191,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(45,212,191,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
@@ -306,7 +342,8 @@ export default function Landing() {
             </div>
             <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
               <Link to="/track-record" className="hover:text-white transition-colors">Track Record</Link>
-              <Link to="/register" className="hover:text-white transition-colors">Sign Up</Link>
+              <Link to="/followers" className="hover:text-white transition-colors">Community</Link>
+              <Link to="/become-provider" className="hover:text-white transition-colors">Become a Provider</Link>
               <Link to="/login" className="hover:text-white transition-colors">Login</Link>
               <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
               <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
