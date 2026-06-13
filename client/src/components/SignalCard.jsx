@@ -61,6 +61,17 @@ export default function SignalCard({ signal, showTrader = false }) {
       {signal.rationale && (
         <p className="text-sm text-gray-400 mt-3 leading-relaxed border-t border-gray-800 pt-3">{signal.rationale}</p>
       )}
+
+      {signal.screenshot_url && (
+        <a href={signal.screenshot_url} target="_blank" rel="noopener noreferrer" className="block mt-3">
+          <img
+            src={signal.screenshot_url}
+            alt={`${signal.asset} chart`}
+            loading="lazy"
+            className="w-full max-h-64 object-cover object-top rounded-lg border border-gray-800 hover:border-brand-500/50 transition-colors"
+          />
+        </a>
+      )}
     </div>
   );
 }

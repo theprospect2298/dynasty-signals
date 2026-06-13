@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import SignalCard from '../components/SignalCard';
@@ -7,13 +7,43 @@ function PublishSignalModal({ onClose, onPublished }) {
   const [form, setForm] = useState({ asset: '', action: 'BUY', entry_price: '', target_price: '', stop_loss: '', timeframe: 'Swing', rationale: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [parsing, setParsing] = useState(false);
+  const [parseNote, setParseNote] = useState('');
+  const [screenshotUrl, setScreenshotUrl] = useState('');
+  const fileRef = useRef(null);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleFile = async (file) => {
+    if (!file) return;
+    setError(''); setParseNote(''); setParsing(true);
+    const fd = new FormData();
+    fd.append('screenshot', file);
+    try {
+      const { data } = await axios.post('/api/signals/parse-screenshot', fd);
+      setForm(f => ({
+        ...f,
+        asset: data.asset || f.asset,
+        action: ['BUY', 'SELL'].includes(data.action) ? data.action : f.action,
+        entry_price: data.entry_price ?? f.entry_price,
+        target_price: data.target_price ?? f.target_price,
+        stop_loss: data.stop_loss ?? f.stop_loss,
+      }));
+      setScreenshotUrl(data.screenshot_url || '');
+      setParseNote(`🤖 ${data.confidence === 'high' ? 'Read with high confidence' : data.confidence === 'medium' ? 'Read — double-check the levels' : 'Low confidence — verify everything'}. ${data.notes || ''}`);
+    } catch (err) {
+      setScreenshotUrl(err.response?.data?.screenshot_url || '');
+      setError(err.response?.data?.error || 'Failed to read the screenshot');
+    } finally {
+      setParsing(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data } = await axios.post('/api/signals', form);
+      const { data } = await axios.post('/api/signals', { ...form, screenshot_url: screenshotUrl || undefined });
       onPublished(data);
       onClose();
     } catch (err) {
@@ -22,14 +52,48 @@ function PublishSignalModal({ onClose, onPublished }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-dark-800 border border-gray-700 rounded-xl w-full max-w-lg">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-dark-800 border border-gray-700 rounded-xl w-full max-w-lg my-8">
         <div className="flex items-center justify-between p-5 border-b border-gray-800">
           <h2 className="text-lg font-bold text-white">Publish New Signal</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-white text-xl">✕</button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && <div className="bg-red-900/30 border border-red-800 rounded-lg px-4 py-2 text-red-400 text-sm">{error}</div>}
+
+          {/* Chart screenshot → AI autofill */}
+          <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden"
+            onChange={e => handleFile(e.target.files?.[0])} />
+          {!screenshotUrl ? (
+            <button type="button" disabled={parsing}
+              onClick={() => fileRef.current?.click()}
+              onDragOver={e => e.preventDefault()}
+              onDrop={e => { e.preventDefault(); handleFile(e.dataTransfer.files?.[0]); }}
+              className="w-full border-2 border-dashed border-gray-700 hover:border-brand-500/60 rounded-xl p-5 text-center transition-colors group">
+              {parsing ? (
+                <span className="flex items-center justify-center gap-3 text-brand-400 text-sm font-medium">
+                  <span className="w-4 h-4 border-2 border-brand-400 border-t-transparent rounded-full animate-spin" />
+                  Reading chart with AI…
+                </span>
+              ) : (
+                <>
+                  <span className="text-2xl block mb-1.5">📊</span>
+                  <span className="text-sm font-semibold text-gray-300 group-hover:text-brand-400 transition-colors block">Upload chart screenshot</span>
+                  <span className="text-xs text-gray-500">AI fills in instrument, entry, stop &amp; target automatically</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="relative rounded-xl overflow-hidden border border-gray-700">
+              <img src={screenshotUrl} alt="Chart screenshot" className="w-full max-h-44 object-cover object-top" />
+              <button type="button" onClick={() => { setScreenshotUrl(''); setParseNote(''); }}
+                aria-label="Remove screenshot"
+                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 text-gray-300 hover:text-white hover:bg-black text-sm">
+                ✕
+              </button>
+            </div>
+          )}
+          {parseNote && <p className="text-xs text-brand-400 leading-relaxed -mt-1">{parseNote}</p>}
 
           <div className="grid grid-cols-2 gap-3">
             <div>

@@ -1,8 +1,22 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+const multer = require('multer');
 const db = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
+
+const IMAGE_TYPES = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (IMAGE_TYPES[file.mimetype]) cb(null, true);
+    else cb(new Error('Only PNG, JPG, WEBP, or GIF images are allowed'));
+  },
+});
 
 // Get signals feed for subscriber (requires active subscription)
 router.get('/feed', requireAuth, (req, res) => {
@@ -65,9 +79,37 @@ router.get('/preview/:traderId', (req, res) => {
   res.json(signals);
 });
 
+// Upload a chart screenshot → AI extracts asset/entry/stop/target (trader only)
+router.post('/parse-screenshot', ...requireRole('trader'), (req, res) => {
+  upload.single('screenshot')(req, res, async (uploadErr) => {
+    if (uploadErr) return res.status(400).json({ error: uploadErr.message });
+    if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+
+    // Save the image so it can be attached to the published signal
+    const ext = IMAGE_TYPES[req.file.mimetype];
+    const filename = `${crypto.randomBytes(8).toString('hex')}.${ext}`;
+    const uploadsDir = path.join(__dirname, '../uploads');
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    fs.writeFileSync(path.join(uploadsDir, filename), req.file.buffer);
+    const screenshot_url = `/uploads/${filename}`;
+
+    try {
+      const { extractTradeFromImage } = require('../vision');
+      const parsed = await extractTradeFromImage(req.file.buffer, req.file.mimetype);
+      res.json({ ...parsed, screenshot_url });
+    } catch (err) {
+      if (err.code === 'NO_API_KEY') {
+        return res.status(503).json({ error: err.message, screenshot_url });
+      }
+      console.error('[vision] parse failed:', err.message);
+      res.status(502).json({ error: 'Could not read the chart — the screenshot is attached, fill the fields manually.', screenshot_url });
+    }
+  });
+});
+
 // Publish a new signal (trader only)
 router.post('/', ...requireRole('trader'), (req, res) => {
-  const { asset, action, entry_price, target_price, stop_loss, timeframe, rationale } = req.body;
+  const { asset, action, entry_price, target_price, stop_loss, timeframe, rationale, screenshot_url } = req.body;
 
   if (!asset || !action) {
     return res.status(400).json({ error: 'Asset and action are required' });
@@ -79,10 +121,14 @@ router.post('/', ...requireRole('trader'), (req, res) => {
   const profile = db.prepare('SELECT id FROM trader_profiles WHERE user_id = ?').get(req.user.id);
   if (!profile) return res.status(404).json({ error: 'Trader profile not found' });
 
+  // Only accept screenshots that came through our own upload endpoint
+  const safeScreenshot = typeof screenshot_url === 'string' && /^\/uploads\/[a-f0-9]+\.(png|jpg|webp|gif)$/.test(screenshot_url)
+    ? screenshot_url : null;
+
   const result = db.prepare(`
-    INSERT INTO signals (trader_id, asset, action, entry_price, target_price, stop_loss, timeframe, rationale)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(profile.id, asset.toUpperCase(), action.toUpperCase(), entry_price || null, target_price || null, stop_loss || null, timeframe || 'Swing', rationale || '');
+    INSERT INTO signals (trader_id, asset, action, entry_price, target_price, stop_loss, timeframe, rationale, screenshot_url)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(profile.id, asset.toUpperCase(), action.toUpperCase(), entry_price || null, target_price || null, stop_loss || null, timeframe || 'Swing', rationale || '', safeScreenshot);
 
   const signal = db.prepare('SELECT * FROM signals WHERE id = ?').get(result.lastInsertRowid);
 

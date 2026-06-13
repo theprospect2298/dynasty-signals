@@ -22,6 +22,9 @@ app.use('/api/push', require('./routes/push'));
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', app: 'Dynasty Signals' }));
 
+// Uploaded chart screenshots
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Serve React frontend in production
 const clientBuild = path.join(__dirname, '../client/dist');
 app.use(express.static(clientBuild));

@@ -7,3 +7,4 @@ client/dist/
 *.db-wal
 npm-debug.log*
 server/vapid.json
+server/uploads/

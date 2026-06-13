@@ -92,6 +92,7 @@ db.exec(`
 
 // Run migrations safely
 try { db.exec(`ALTER TABLE trader_profiles ADD COLUMN official INTEGER DEFAULT 0`); } catch {}
+try { db.exec(`ALTER TABLE signals ADD COLUMN screenshot_url TEXT`); } catch {}
 
 // ── Promote official owner account ──────────────────────────────────────────
 const OWNER_EMAIL = 'cjventura229822@yahoo.com';
