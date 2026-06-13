@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // ── Deterministic RNG so the mesh is stable across renders ─────────────────
 function mulberry32(a) {
@@ -49,7 +49,7 @@ function genMesh(x0, y0, w, h, seed, step = 46) {
   return { tris, dots };
 }
 
-// Particle "dissolve" field — bits of the animals breaking away, like the artwork
+// Particle "dissolve" field — bits of the animals breaking away
 function genParticles(x0, y0, w, h, seed, count = 36) {
   const rnd = mulberry32(seed);
   const dots = [], tris = [];
@@ -64,7 +64,7 @@ function genParticles(x0, y0, w, h, seed, count = 36) {
 }
 
 const BULL_MESH = genMesh(95, 140, 410, 330, 7);
-const BEAR_MESH = genMesh(640, 110, 430, 355, 13);
+const BEAR_MESH = genMesh(640, 110, 430, 344, 13);
 const BULL_PARTS = genParticles(105, 105, 300, 95, 21);
 const BEAR_PARTS = genParticles(700, 78, 340, 110, 31);
 
@@ -83,8 +83,6 @@ const GROUND = (() => {
   return tris;
 })();
 
-// Charging bull — head plunged low, horns hooked forward-up, tail whipped
-// up, one front leg folded mid-paw, hind legs driving back
 const BULL_PATH = `M 100 170
 L 122 196 L 148 224
 L 205 208 L 280 184 L 345 162
@@ -100,8 +98,6 @@ L 246 394 L 226 412 L 196 452 L 176 452 L 204 404 L 218 370
 L 196 376 L 162 414 L 136 452 L 118 450 L 148 396 L 160 348
 L 146 298 L 140 250 Z`;
 
-// Rearing bear — head thrown high, jaw wide open roaring, one arm
-// reaching down-forward with claws out, body sloping back to planted feet
 const BEAR_PATH = `M 664 158
 L 686 142
 L 712 132 L 720 114 L 734 130
@@ -142,12 +138,19 @@ const TICKERS = [
 
 const CROSSES = [[138, 215], [500, 200], [770, 70], [905, 320], [296, 416], [1140, 152], [560, 372]];
 
+const VIEW = '0 0 1200 560';
+const POP_EASE = 'transform 0.55s cubic-bezier(0.18, 0.9, 0.22, 1.35), opacity 0.35s ease, filter 0.35s ease';
+
 export default function BullBearScene() {
+  const [hovered, setHovered] = useState(null); // 'bull' | 'bear' | null
+  const wrapRef = useRef(null);
+  const stageRef = useRef(null);
   const bullRef = useRef(null);
   const bearRef = useRef(null);
   const clashRef = useRef(null);
   const raf = useRef(null);
 
+  // Scroll-driven charge (unchanged)
   useEffect(() => {
     const update = () => {
       raf.current = null;
@@ -166,152 +169,242 @@ export default function BullBearScene() {
     return () => { window.removeEventListener('scroll', onScroll); if (raf.current) cancelAnimationFrame(raf.current); };
   }, []);
 
+  // Mouse-tracking parallax tilt — the whole diorama leans with the cursor
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const stage = stageRef.current;
+    if (!wrap || !stage) return;
+    let tiltRaf = null;
+    let last = null;
+
+    const apply = () => {
+      tiltRaf = null;
+      if (!last) return;
+      stage.style.transform = `rotateY(${last.nx * 5}deg) rotateX(${last.ny * -3.5}deg)`;
+    };
+    const onMove = (e) => {
+      const r = wrap.getBoundingClientRect();
+      last = {
+        nx: ((e.clientX - r.left) / r.width) * 2 - 1,
+        ny: ((e.clientY - r.top) / r.height) * 2 - 1,
+      };
+      if (!tiltRaf) tiltRaf = requestAnimationFrame(apply);
+    };
+    const onLeave = () => {
+      last = null;
+      stage.style.transform = 'rotateY(0deg) rotateX(0deg)';
+    };
+    wrap.addEventListener('mousemove', onMove);
+    wrap.addEventListener('mouseleave', onLeave);
+    return () => {
+      wrap.removeEventListener('mousemove', onMove);
+      wrap.removeEventListener('mouseleave', onLeave);
+      if (tiltRaf) cancelAnimationFrame(tiltRaf);
+    };
+  }, []);
+
+  // Per-layer 3D pop styling
+  const animalLayer = (which) => {
+    const isHovered = hovered === which;
+    const otherHovered = hovered && hovered !== which;
+    return {
+      position: 'absolute',
+      inset: 0,
+      transformStyle: 'preserve-3d',
+      transformOrigin: which === 'bull' ? '30% 62%' : '74% 58%',
+      transform: isHovered
+        ? `translateZ(150px) scale(1.08) rotateY(${which === 'bull' ? 9 : -9}deg) rotateX(4deg)`
+        : otherHovered
+          ? 'translateZ(-35px) scale(0.985)'
+          : 'translateZ(0px)',
+      opacity: otherHovered ? 0.7 : 1,
+      filter: isHovered
+        ? 'drop-shadow(0 30px 46px rgba(45, 212, 191, 0.45)) brightness(1.18)'
+        : 'none',
+      transition: POP_EASE,
+      willChange: 'transform, filter',
+      pointerEvents: 'none',
+      zIndex: isHovered ? 3 : 1,
+    };
+  };
+
+  const bgLayer = {
+    position: 'absolute',
+    inset: 0,
+    transform: hovered ? 'translateZ(-80px) scale(1.03)' : 'translateZ(-40px) scale(1.02)',
+    filter: hovered ? 'brightness(0.75)' : 'none',
+    transition: POP_EASE,
+    pointerEvents: 'none',
+  };
+
   return (
-    <div className="relative w-full">
-      <svg viewBox="0 0 1200 560" className="w-full h-auto block" role="img" aria-label="Low-poly bull and bear charging toward each other" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bullGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#2dd4bf" />
-            <stop offset="0.45" stopColor="#0ea5a0" />
-            <stop offset="1" stopColor="#0b3a52" />
-          </linearGradient>
-          <linearGradient id="bearGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#5eead4" />
-            <stop offset="0.5" stopColor="#0e7490" />
-            <stop offset="1" stopColor="#0a2540" />
-          </linearGradient>
-          <radialGradient id="aura" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0" stopColor="#2dd4bf" stopOpacity="0.25" />
-            <stop offset="1" stopColor="#2dd4bf" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="clashGrad" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0" stopColor="#d8fff7" stopOpacity="0.9" />
-            <stop offset="0.4" stopColor="#2dd4bf" stopOpacity="0.45" />
-            <stop offset="1" stopColor="#2dd4bf" stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id="horizGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#2dd4bf" stopOpacity="0" />
-            <stop offset="0.5" stopColor="#2dd4bf" stopOpacity="0.6" />
-            <stop offset="1" stopColor="#2dd4bf" stopOpacity="0" />
-          </linearGradient>
-          <filter id="glowF" x="-80%" y="-80%" width="260%" height="260%">
-            <feGaussianBlur stdDeviation="3.2" result="b" />
-            <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-          <clipPath id="bullClip"><path d={BULL_PATH} /></clipPath>
-          <clipPath id="bearClip"><path d={BEAR_PATH} /></clipPath>
-        </defs>
+    <div
+      ref={wrapRef}
+      className="relative w-full select-none z-10"
+      style={{ aspectRatio: '1200 / 560', perspective: '1100px', perspectiveOrigin: '50% 42%' }}
+      role="img"
+      aria-label="Low-poly bull and bear charging toward each other"
+    >
+      <div ref={stageRef} className="absolute inset-0" style={{ transformStyle: 'preserve-3d', transition: 'transform 0.25s ease-out', willChange: 'transform' }}>
 
-        {/* Aura glows behind each animal */}
-        <ellipse cx="300" cy="310" rx="260" ry="180" fill="url(#aura)" />
-        <ellipse cx="870" cy="290" rx="270" ry="185" fill="url(#aura)" />
+        {/* ── LAYER 1: background (auras, scan lines, clash, ground, tickers) ── */}
+        <svg viewBox={VIEW} className="w-full h-full block" style={bgLayer} xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="aura" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0" stopColor="#2dd4bf" stopOpacity="0.25" />
+              <stop offset="1" stopColor="#2dd4bf" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="clashGrad" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0" stopColor="#d8fff7" stopOpacity="0.9" />
+              <stop offset="0.4" stopColor="#2dd4bf" stopOpacity="0.45" />
+              <stop offset="1" stopColor="#2dd4bf" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="horizGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#2dd4bf" stopOpacity="0" />
+              <stop offset="0.5" stopColor="#2dd4bf" stopOpacity="0.6" />
+              <stop offset="1" stopColor="#2dd4bf" stopOpacity="0" />
+            </linearGradient>
+          </defs>
 
-        {/* Scatter crosses + dashed scan lines */}
-        {CROSSES.map(([x, y], i) => (
-          <g key={i} stroke="#5eead4" strokeOpacity="0.18" strokeWidth="1">
-            <line x1={x - 5} y1={y} x2={x + 5} y2={y} />
-            <line x1={x} y1={y - 5} x2={x} y2={y + 5} />
-          </g>
-        ))}
-        <line x1="500" y1="280" x2="650" y2="280" stroke="#5eead4" strokeOpacity="0.12" strokeDasharray="3 9" />
-        <line x1="575" y1="120" x2="575" y2="420" stroke="#5eead4" strokeOpacity="0.08" strokeDasharray="2 10" />
+          <ellipse cx="300" cy="310" rx="260" ry="180" fill="url(#aura)" />
+          <ellipse cx="870" cy="290" rx="270" ry="185" fill="url(#aura)" />
 
-        {/* ── BULL (scroll-driven charge →) ── */}
-        <g ref={bullRef} style={{ transformBox: 'fill-box', transformOrigin: '70% 80%', willChange: 'transform' }}>
-          <g className="bob-a" style={{ transformBox: 'fill-box' }}>
-            {/* Dissolve particles along the back */}
-            {BULL_PARTS.dots.map((p, i) => (
-              <circle key={'p' + i} cx={p.x} cy={p.y} r={p.r} fill="#7ff0dc" opacity={p.o} className="tick" style={{ animationDelay: `${p.d}s` }} />
-            ))}
-            {BULL_PARTS.tris.map((t, i) => (
-              <polygon key={'t' + i} points={t.pts} fill="none" stroke="#5eead4" strokeOpacity={t.o} strokeWidth="0.8" className="tick" style={{ animationDelay: `${t.d}s` }} />
-            ))}
-            <path d={BULL_PATH} fill="url(#bullGrad)" opacity="0.5" />
-            <g clipPath="url(#bullClip)">
-              {BULL_MESH.tris.map((t, i) => (
-                <polygon key={i} points={t.p.map(p => p.join(',')).join(' ')} fill={t.f} fillOpacity={t.o} stroke="#7df0dc" strokeOpacity="0.14" strokeWidth="0.7" />
-              ))}
-              {BULL_MESH.dots.map((d, i) => (
-                <circle key={i} cx={d.x} cy={d.y} r={d.r} fill="#7ff0dc" opacity={d.o} className={d.pulse ? 'node-pulse' : undefined} />
-              ))}
+          {CROSSES.map(([x, y], i) => (
+            <g key={i} stroke="#5eead4" strokeOpacity="0.18" strokeWidth="1">
+              <line x1={x - 5} y1={y} x2={x + 5} y2={y} />
+              <line x1={x} y1={y - 5} x2={x} y2={y + 5} />
             </g>
-            <path d={BULL_PATH} fill="none" stroke="#5eead4" strokeOpacity="0.55" strokeWidth="1.4" strokeLinejoin="round" />
-            {/* Horns — thick crescents hooking up */}
-            <path d="M 408 244 C 446 220, 482 200, 500 172 C 506 162, 504 150, 496 142 C 500 156, 494 170, 482 184 C 462 206, 438 228, 430 256 Z" fill="#d8fff7" opacity="0.95" filter="url(#glowF)" />
-            <path d="M 388 234 C 414 208, 440 190, 454 166 C 458 156, 456 146, 450 140 C 452 154, 446 166, 436 178 C 420 196, 402 216, 392 240 Z" fill="#aef5e8" opacity="0.5" />
-            {/* Ear, tail tuft, raised hoof */}
-            <path d="M 386 244 L 360 230 L 374 260 Z" fill="#2dd4bf" opacity="0.6" />
-            <path d="M 100 170 L 84 142 L 114 150 Z" fill="#2dd4bf" opacity="0.75" />
-            <path d="M 334 410 L 318 416 L 338 424 Z" fill="#aef5e8" opacity="0.8" />
-            {/* Eye + nostril */}
-            <circle cx="430" cy="288" r="3" fill="#d8fff7" filter="url(#glowF)" />
-            <circle cx="470" cy="368" r="2" fill="#021018" opacity="0.85" />
+          ))}
+          <line x1="500" y1="280" x2="650" y2="280" stroke="#5eead4" strokeOpacity="0.12" strokeDasharray="3 9" />
+          <line x1="575" y1="120" x2="575" y2="420" stroke="#5eead4" strokeOpacity="0.08" strokeDasharray="2 10" />
+
+          <g ref={clashRef} style={{ opacity: 0, transformBox: 'fill-box', transformOrigin: 'center', willChange: 'transform, opacity' }}>
+            <circle cx="575" cy="278" r="52" fill="url(#clashGrad)" />
+            <path d="M 569 254 L 579 276 L 563 282 L 581 306" stroke="#d8fff7" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M 591 262 L 577 280 L 593 288" stroke="#aef5e8" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </g>
-        </g>
 
-        {/* ── BEAR (scroll-driven charge ←) ── */}
-        <g ref={bearRef} style={{ transformBox: 'fill-box', transformOrigin: '30% 80%', willChange: 'transform' }}>
-          <g className="bob-b" style={{ transformBox: 'fill-box' }}>
-            {/* Dissolve particles along the back */}
-            {BEAR_PARTS.dots.map((p, i) => (
-              <circle key={'p' + i} cx={p.x} cy={p.y} r={p.r} fill="#7ff0dc" opacity={p.o} className="tick" style={{ animationDelay: `${p.d}s` }} />
-            ))}
-            {BEAR_PARTS.tris.map((t, i) => (
-              <polygon key={'t' + i} points={t.pts} fill="none" stroke="#5eead4" strokeOpacity={t.o} strokeWidth="0.8" className="tick" style={{ animationDelay: `${t.d}s` }} />
-            ))}
-            <path d={BEAR_PATH} fill="url(#bearGrad)" opacity="0.5" />
-            <g clipPath="url(#bearClip)">
-              {BEAR_MESH.tris.map((t, i) => (
-                <polygon key={i} points={t.p.map(p => p.join(',')).join(' ')} fill={t.f} fillOpacity={t.o} stroke="#7df0dc" strokeOpacity="0.14" strokeWidth="0.7" />
-              ))}
-              {BEAR_MESH.dots.map((d, i) => (
-                <circle key={i} cx={d.x} cy={d.y} r={d.r} fill="#7ff0dc" opacity={d.o} className={d.pulse ? 'node-pulse' : undefined} />
-              ))}
-            </g>
-            <path d={BEAR_PATH} fill="none" stroke="#5eead4" strokeOpacity="0.55" strokeWidth="1.4" strokeLinejoin="round" />
-            {/* Teeth along the open gape */}
-            <path d="M 696 190 L 702 204 L 710 193 Z" fill="#d8fff7" opacity="0.9" />
-            <path d="M 714 199 L 720 212 L 727 202 Z" fill="#d8fff7" opacity="0.85" />
-            <path d="M 686 227 L 694 215 L 700 226 Z" fill="#d8fff7" opacity="0.85" />
-            {/* Claws — reaching paw, planted paw, hind feet */}
-            <path d="M 664 388 L 646 392 L 666 398 Z" fill="#d8fff7" opacity="0.9" filter="url(#glowF)" />
-            <path d="M 672 404 L 654 410 L 674 412 Z" fill="#d8fff7" opacity="0.85" />
-            <path d="M 756 454 L 740 458 L 757 461 Z" fill="#aef5e8" opacity="0.7" />
-            <path d="M 902 452 L 887 455 L 903 458 Z" fill="#aef5e8" opacity="0.7" />
-            <path d="M 1002 452 L 987 455 L 1003 458 Z" fill="#aef5e8" opacity="0.7" />
-            {/* Eye + nose */}
-            <circle cx="696" cy="170" r="3" fill="#d8fff7" filter="url(#glowF)" />
-            <circle cx="668" cy="164" r="2" fill="#021018" opacity="0.85" />
-            {/* Roar breath */}
-            <circle cx="646" cy="148" r="2" fill="#7ff0dc" opacity="0.4" className="tick" style={{ animationDelay: '0.4s' }} />
-            <circle cx="634" cy="136" r="1.5" fill="#7ff0dc" opacity="0.3" className="tick" style={{ animationDelay: '1.6s' }} />
-            <circle cx="640" cy="162" r="1" fill="#7ff0dc" opacity="0.3" className="tick" style={{ animationDelay: '2.4s' }} />
-          </g>
-        </g>
+          {GROUND.map((t, i) => (
+            <polygon key={i} points={t.p.map(p => p.join(',')).join(' ')} fill={t.f} fillOpacity={t.o} stroke="#5eead4" strokeOpacity="0.16" strokeWidth="0.7" />
+          ))}
+          <line x1="0" y1="452" x2="1200" y2="452" stroke="url(#horizGrad)" strokeWidth="1.5" opacity="0.6" />
 
-        {/* ── Clash spark (builds as they converge) ── */}
-        <g ref={clashRef} style={{ opacity: 0, transformBox: 'fill-box', transformOrigin: 'center', willChange: 'transform, opacity' }}>
-          <circle cx="575" cy="278" r="52" fill="url(#clashGrad)" />
-          <path d="M 569 254 L 579 276 L 563 282 L 581 306" stroke="#d8fff7" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M 591 262 L 577 280 L 593 288" stroke="#aef5e8" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        </g>
-
-        {/* ── Ground ── */}
-        {GROUND.map((t, i) => (
-          <polygon key={i} points={t.p.map(p => p.join(',')).join(' ')} fill={t.f} fillOpacity={t.o} stroke="#5eead4" strokeOpacity="0.16" strokeWidth="0.7" />
-        ))}
-        <line x1="0" y1="452" x2="1200" y2="452" stroke="url(#horizGrad)" strokeWidth="1.5" opacity="0.6" />
-
-        {/* ── Floating tickers ── */}
-        {TICKERS.map((tk, i) => (
-          <text key={i} x={tk.x} y={tk.y} fill={tk.c} fontSize="12" fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace" opacity="0.55" className="tick" style={{ animationDelay: `${tk.d}s` }}>
-            {tk.t}
+          {TICKERS.map((tk, i) => (
+            <text key={i} x={tk.x} y={tk.y} fill={tk.c} fontSize="12" fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace" opacity="0.55" className="tick" style={{ animationDelay: `${tk.d}s` }}>
+              {tk.t}
+            </text>
+          ))}
+          <text x="552" y="492" fill="#9be8da" fontSize="15" letterSpacing="1" fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace" opacity="0.7" className="tick" style={{ animationDelay: '1s' }}>
+            62,901.36
           </text>
-        ))}
-        <text x="552" y="492" fill="#9be8da" fontSize="15" letterSpacing="1" fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace" opacity="0.7" className="tick" style={{ animationDelay: '1s' }}>
-          62,901.36
-        </text>
-      </svg>
+        </svg>
+
+        {/* ── LAYER 2: BULL (3D pop on hover) ── */}
+        <svg viewBox={VIEW} className="w-full h-full block" style={animalLayer('bull')} xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bullGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#2dd4bf" />
+              <stop offset="0.45" stopColor="#0ea5a0" />
+              <stop offset="1" stopColor="#0b3a52" />
+            </linearGradient>
+            <filter id="glowFb" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="3.2" result="b" />
+              <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <clipPath id="bullClip"><path d={BULL_PATH} /></clipPath>
+          </defs>
+
+          <g
+            ref={bullRef}
+            id="bull-hit"
+            style={{ transformBox: 'fill-box', transformOrigin: '70% 80%', willChange: 'transform', pointerEvents: 'auto', cursor: 'pointer' }}
+            onMouseEnter={() => setHovered('bull')}
+            onMouseLeave={() => setHovered(h => (h === 'bull' ? null : h))}
+          >
+            <g className="bob-a" style={{ transformBox: 'fill-box' }}>
+              {BULL_PARTS.dots.map((p, i) => (
+                <circle key={'p' + i} cx={p.x} cy={p.y} r={p.r} fill="#7ff0dc" opacity={p.o} className="tick" style={{ animationDelay: `${p.d}s` }} />
+              ))}
+              {BULL_PARTS.tris.map((t, i) => (
+                <polygon key={'t' + i} points={t.pts} fill="none" stroke="#5eead4" strokeOpacity={t.o} strokeWidth="0.8" className="tick" style={{ animationDelay: `${t.d}s` }} />
+              ))}
+              <path d={BULL_PATH} fill="url(#bullGrad)" opacity="0.5" />
+              <g clipPath="url(#bullClip)">
+                {BULL_MESH.tris.map((t, i) => (
+                  <polygon key={i} points={t.p.map(p => p.join(',')).join(' ')} fill={t.f} fillOpacity={t.o} stroke="#7df0dc" strokeOpacity="0.14" strokeWidth="0.7" />
+                ))}
+                {BULL_MESH.dots.map((d, i) => (
+                  <circle key={i} cx={d.x} cy={d.y} r={d.r} fill="#7ff0dc" opacity={d.o} className={d.pulse ? 'node-pulse' : undefined} />
+                ))}
+              </g>
+              <path d={BULL_PATH} fill="none" stroke="#5eead4" strokeOpacity="0.55" strokeWidth="1.4" strokeLinejoin="round" />
+              <path d="M 408 244 C 446 220, 482 200, 500 172 C 506 162, 504 150, 496 142 C 500 156, 494 170, 482 184 C 462 206, 438 228, 430 256 Z" fill="#d8fff7" opacity="0.95" filter="url(#glowFb)" />
+              <path d="M 388 234 C 414 208, 440 190, 454 166 C 458 156, 456 146, 450 140 C 452 154, 446 166, 436 178 C 420 196, 402 216, 392 240 Z" fill="#aef5e8" opacity="0.5" />
+              <path d="M 386 244 L 360 230 L 374 260 Z" fill="#2dd4bf" opacity="0.6" />
+              <path d="M 100 170 L 84 142 L 114 150 Z" fill="#2dd4bf" opacity="0.75" />
+              <path d="M 334 410 L 318 416 L 338 424 Z" fill="#aef5e8" opacity="0.8" />
+              <circle cx="430" cy="288" r="3" fill="#d8fff7" filter="url(#glowFb)" />
+              <circle cx="470" cy="368" r="2" fill="#021018" opacity="0.85" />
+            </g>
+          </g>
+        </svg>
+
+        {/* ── LAYER 3: BEAR (3D pop on hover) ── */}
+        <svg viewBox={VIEW} className="w-full h-full block" style={animalLayer('bear')} xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bearGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#5eead4" />
+              <stop offset="0.5" stopColor="#0e7490" />
+              <stop offset="1" stopColor="#0a2540" />
+            </linearGradient>
+            <filter id="glowFr" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="3.2" result="b" />
+              <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+            <clipPath id="bearClip"><path d={BEAR_PATH} /></clipPath>
+          </defs>
+
+          <g
+            ref={bearRef}
+            id="bear-hit"
+            style={{ transformBox: 'fill-box', transformOrigin: '30% 80%', willChange: 'transform', pointerEvents: 'auto', cursor: 'pointer' }}
+            onMouseEnter={() => setHovered('bear')}
+            onMouseLeave={() => setHovered(h => (h === 'bear' ? null : h))}
+          >
+            <g className="bob-b" style={{ transformBox: 'fill-box' }}>
+              {BEAR_PARTS.dots.map((p, i) => (
+                <circle key={'p' + i} cx={p.x} cy={p.y} r={p.r} fill="#7ff0dc" opacity={p.o} className="tick" style={{ animationDelay: `${p.d}s` }} />
+              ))}
+              {BEAR_PARTS.tris.map((t, i) => (
+                <polygon key={'t' + i} points={t.pts} fill="none" stroke="#5eead4" strokeOpacity={t.o} strokeWidth="0.8" className="tick" style={{ animationDelay: `${t.d}s` }} />
+              ))}
+              <path d={BEAR_PATH} fill="url(#bearGrad)" opacity="0.5" />
+              <g clipPath="url(#bearClip)">
+                {BEAR_MESH.tris.map((t, i) => (
+                  <polygon key={i} points={t.p.map(p => p.join(',')).join(' ')} fill={t.f} fillOpacity={t.o} stroke="#7df0dc" strokeOpacity="0.14" strokeWidth="0.7" />
+                ))}
+                {BEAR_MESH.dots.map((d, i) => (
+                  <circle key={i} cx={d.x} cy={d.y} r={d.r} fill="#7ff0dc" opacity={d.o} className={d.pulse ? 'node-pulse' : undefined} />
+                ))}
+              </g>
+              <path d={BEAR_PATH} fill="none" stroke="#5eead4" strokeOpacity="0.55" strokeWidth="1.4" strokeLinejoin="round" />
+              <path d="M 696 190 L 702 204 L 710 193 Z" fill="#d8fff7" opacity="0.9" />
+              <path d="M 714 199 L 720 212 L 727 202 Z" fill="#d8fff7" opacity="0.85" />
+              <path d="M 686 227 L 694 215 L 700 226 Z" fill="#d8fff7" opacity="0.85" />
+              <path d="M 664 388 L 646 392 L 666 398 Z" fill="#d8fff7" opacity="0.9" filter="url(#glowFr)" />
+              <path d="M 672 404 L 654 410 L 674 412 Z" fill="#d8fff7" opacity="0.85" />
+              <path d="M 756 454 L 740 458 L 757 461 Z" fill="#aef5e8" opacity="0.7" />
+              <path d="M 902 452 L 887 455 L 903 458 Z" fill="#aef5e8" opacity="0.7" />
+              <path d="M 1002 452 L 987 455 L 1003 458 Z" fill="#aef5e8" opacity="0.7" />
+              <circle cx="696" cy="170" r="3" fill="#d8fff7" filter="url(#glowFr)" />
+              <circle cx="668" cy="164" r="2" fill="#021018" opacity="0.85" />
+              <circle cx="646" cy="148" r="2" fill="#7ff0dc" opacity="0.4" className="tick" style={{ animationDelay: '0.4s' }} />
+              <circle cx="634" cy="136" r="1.5" fill="#7ff0dc" opacity="0.3" className="tick" style={{ animationDelay: '1.6s' }} />
+              <circle cx="630" cy="240" r="1" fill="#7ff0dc" opacity="0.3" className="tick" style={{ animationDelay: '2.4s' }} />
+            </g>
+          </g>
+        </svg>
+      </div>
     </div>
   );
 }
