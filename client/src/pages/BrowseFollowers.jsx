@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import StatTile from '../components/StatTile';
+import TiltCard from '../components/TiltCard';
 
 export default function BrowseFollowers() {
   const { user } = useAuth();
@@ -27,22 +29,19 @@ export default function BrowseFollowers() {
       </div>
 
       {/* Community stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
-        <div className="stat-card text-center">
-          <p className="text-3xl font-black text-brand-400 mb-1">{data?.total ?? '—'}</p>
-          <p className="text-xs text-gray-500">Total Members</p>
-        </div>
-        <div className="stat-card text-center">
-          <p className="text-3xl font-black text-green-400 mb-1">{data?.subscribed ?? '—'}</p>
-          <p className="text-xs text-gray-500">Active Subscribers</p>
-        </div>
-        <div className="stat-card text-center flex flex-col items-center justify-center">
-          {user ? (
-            officialId && <Link to={`/traders/${officialId}`} className="btn-primary text-sm py-2 px-4">Subscribe to Signals →</Link>
-          ) : (
-            <Link to="/register" className="btn-primary text-sm py-2 px-4">Join the Community →</Link>
-          )}
-        </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8" style={{ perspective: '1000px' }}>
+        <StatTile label="Total Members" value={data?.total || 0} format={v => `${Math.round(v)}`} color="text-brand-400" glow="45,212,191" icon="👥" />
+        <StatTile label="Active Subscribers" value={data?.subscribed || 0} format={v => `${Math.round(v)}`} color="text-green-400" glow="34,197,94" icon="✅" />
+        <TiltCard glow="45,212,191" className="bg-dark-700 border border-gray-800 overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgb(45,212,191), transparent)', opacity: 0.85 }} />
+          <div className="p-4 flex items-center justify-center h-full">
+            {user ? (
+              officialId && <Link to={`/traders/${officialId}`} className="btn-primary text-sm py-2 px-4">Subscribe to Signals →</Link>
+            ) : (
+              <Link to="/register" className="btn-primary text-sm py-2 px-4">Join the Community →</Link>
+            )}
+          </div>
+        </TiltCard>
       </div>
 
       <input
@@ -72,9 +71,9 @@ export default function BrowseFollowers() {
           <Link to="/register" className="btn-primary">Join Now</Link>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" style={{ perspective: '1200px' }}>
           {filtered.map(f => (
-            <div key={f.id} className="card flex items-center gap-3">
+            <TiltCard key={f.id} max={8} glow={f.following > 0 ? '45,212,191' : '100,116,139'} className="card flex items-center gap-3">
               <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand-500 to-cyan-700 flex items-center justify-center text-white font-bold shrink-0">
                 {f.initial}
               </div>
@@ -85,7 +84,7 @@ export default function BrowseFollowers() {
                   {f.following > 0 && <span className="ml-2 text-brand-400">● Subscribed</span>}
                 </p>
               </div>
-            </div>
+            </TiltCard>
           ))}
         </div>
       )}

@@ -21,22 +21,23 @@ function useCountUp(target, duration = 1100) {
   return val;
 }
 
-export default function StatTile({ label, value, format, color = 'text-white', glow = '45,212,191', icon }) {
-  const animated = useCountUp(value);
+// `value` + `format` → animated count-up. Or pass `display` for a static
+// (non-numeric / combined) value that still tilts and glows.
+export default function StatTile({ label, value, format, display, color = 'text-white', glow = '45,212,191', icon, hint }) {
+  const animated = useCountUp(display != null ? 0 : value);
   return (
     <TiltCard glow={glow} className="bg-dark-700 border border-gray-800 overflow-hidden">
-      {/* glowing top accent line */}
       <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, transparent, rgb(${glow}), transparent)`, opacity: 0.85 }} />
-      <div className="p-4">
+      <div className="p-4" title={hint || ''}>
         <div className="flex items-start justify-between gap-2">
-          <p className={`text-2xl font-black ${color}`} style={{ textShadow: `0 0 18px rgba(${glow},0.5)` }}>
-            {format(animated)}
+          <p className={`${display != null ? 'text-xl' : 'text-2xl'} font-black ${color}`} style={{ textShadow: `0 0 18px rgba(${glow},0.5)` }}>
+            {display != null ? display : format(animated)}
           </p>
           {icon && (
             <span className="text-lg opacity-70 shrink-0" style={{ filter: `drop-shadow(0 0 6px rgba(${glow},0.6))` }}>{icon}</span>
           )}
         </div>
-        <p className="text-[11px] text-gray-500 uppercase tracking-[0.15em] font-mono mt-1">{label}</p>
+        <p className="text-[11px] text-gray-500 uppercase tracking-[0.15em] font-mono mt-1 leading-tight">{label}</p>
       </div>
     </TiltCard>
   );
