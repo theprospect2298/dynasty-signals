@@ -9,13 +9,16 @@ export default function SignalAlertPopup({ alert, onClose }) {
   const [paused, setPaused] = useState(false);
   const navigate = useNavigate();
 
-  const { signal, traderName, traderProfileId } = alert;
+  const { signal, traderName, traderProfileId, kind } = alert;
+  const isClosed = kind === 'closed';
+  const isWin = isClosed && signal.result === 'win';
   const isBuy = signal.action === 'BUY';
   const isSell = signal.action === 'SELL';
   const accentText = isBuy ? 'text-green-400' : isSell ? 'text-red-400' : 'text-yellow-400';
   const accentBg = isBuy ? 'bg-green-900/40 border-green-700/60' : isSell ? 'bg-red-900/40 border-red-700/60' : 'bg-yellow-900/40 border-yellow-700/60';
-  const glowClass = isSell ? 'alert-glow-red' : 'alert-glow-teal';
+  const glowClass = (isClosed ? !isWin : isSell) ? 'alert-glow-red' : 'alert-glow-teal';
   const arrow = isBuy ? '▲' : isSell ? '▼' : '◆';
+  const pct = signal.profit_loss_pct != null ? `${signal.profit_loss_pct > 0 ? '+' : ''}${signal.profit_loss_pct}%` : '';
 
   const dismiss = () => {
     setLeaving(true);
@@ -57,9 +60,9 @@ export default function SignalAlertPopup({ alert, onClose }) {
             <Logo className="w-9 h-9 relative" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-black text-brand-400 tracking-[0.2em] flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />
-              LIVE SIGNAL
+            <p className={`text-xs font-black tracking-[0.2em] flex items-center gap-1.5 ${isClosed ? (isWin ? 'text-green-400' : 'text-red-400') : 'text-brand-400'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isClosed ? (isWin ? 'bg-green-400' : 'bg-red-400') : 'bg-brand-400'}`} />
+              {isClosed ? (isWin ? 'TRADE CLOSED — WIN' : 'TRADE CLOSED — LOSS') : 'LIVE SIGNAL'}
             </p>
             <p className="text-xs text-gray-400 truncate">from <span className="text-white font-semibold">{traderName}</span></p>
           </div>
@@ -68,29 +71,41 @@ export default function SignalAlertPopup({ alert, onClose }) {
         {/* Asset + action */}
         <div className="flex items-center gap-3 mb-3">
           <span className="text-2xl font-black text-white tracking-tight">{signal.asset}</span>
-          <span className={`text-sm font-black px-2.5 py-1 rounded-lg border ${accentBg} ${accentText}`}>
-            {arrow} {signal.action}
-          </span>
-          {signal.timeframe && (
+          {isClosed ? (
+            <span className={`text-base font-black px-2.5 py-1 rounded-lg border ${isWin ? 'bg-green-900/40 border-green-700/60 text-green-400' : 'bg-red-900/40 border-red-700/60 text-red-400'}`}>
+              {isWin ? '✓' : '✗'} {pct}
+            </span>
+          ) : (
+            <span className={`text-sm font-black px-2.5 py-1 rounded-lg border ${accentBg} ${accentText}`}>
+              {arrow} {signal.action}
+            </span>
+          )}
+          {!isClosed && signal.timeframe && (
             <span className="ml-auto mr-6 text-xs text-gray-500 bg-dark-700 px-2 py-0.5 rounded">⏱ {signal.timeframe}</span>
           )}
         </div>
 
         {/* Levels */}
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          {[
-            ['Entry', fmt(signal.entry_price), 'text-white'],
-            ['Target', fmt(signal.target_price), 'text-green-400'],
-            ['Stop', fmt(signal.stop_loss), 'text-red-400'],
-          ].map(([label, value, color]) => (
-            <div key={label} className="bg-dark-700/80 border border-gray-800 rounded-lg px-2 py-1.5 text-center">
-              <p className="text-xs text-gray-500">{label}</p>
-              <p className={`text-sm font-bold ${color}`}>{value || '—'}</p>
-            </div>
-          ))}
-        </div>
+        {isClosed ? (
+          <p className="text-xs text-gray-400 mb-3">
+            {traderName} closed the {signal.action} on {signal.asset}{signal.entry_price ? ` from entry ${fmt(signal.entry_price)}` : ''}.
+          </p>
+        ) : (
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            {[
+              ['Entry', fmt(signal.entry_price), 'text-white'],
+              ['Target', fmt(signal.target_price), 'text-green-400'],
+              ['Stop', fmt(signal.stop_loss), 'text-red-400'],
+            ].map(([label, value, color]) => (
+              <div key={label} className="bg-dark-700/80 border border-gray-800 rounded-lg px-2 py-1.5 text-center">
+                <p className="text-xs text-gray-500">{label}</p>
+                <p className={`text-sm font-bold ${color}`}>{value || '—'}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
-        {signal.rationale && (
+        {!isClosed && signal.rationale && (
           <p className="text-xs text-gray-400 leading-relaxed mb-3 line-clamp-2 border-l-2 border-brand-500/60 pl-2.5">
             {signal.rationale}
           </p>
@@ -99,7 +114,7 @@ export default function SignalAlertPopup({ alert, onClose }) {
         {/* Actions */}
         <div className="flex gap-2">
           <button onClick={view} className="btn-primary flex-1 text-sm py-2 shadow-[0_0_16px_rgba(45,212,191,0.3)]">
-            View Signal →
+            {isClosed ? 'View History →' : 'View Signal →'}
           </button>
           <button onClick={dismiss} className="btn-secondary text-sm py-2 px-4">
             Dismiss

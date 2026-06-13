@@ -88,6 +88,16 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS password_resets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token_hash TEXT UNIQUE NOT NULL,
+    expires_at INTEGER NOT NULL,
+    used INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
 `);
 
 // Run migrations safely

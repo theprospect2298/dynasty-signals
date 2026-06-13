@@ -75,7 +75,8 @@ export default function Register() {
             <input type="checkbox" className="mt-0.5 accent-green-500" checked={agreed} onChange={e => setAgreed(e.target.checked)} />
             <span className="text-xs text-gray-500 leading-relaxed">
               I understand that Dynasty Signals provides signals for <strong className="text-gray-400">informational purposes only</strong>, is not financial advice, and that trading involves substantial risk of loss. I accept the{' '}
-              <span className="text-brand-400 underline cursor-pointer">Terms of Service</span>.
+              <Link to="/terms" target="_blank" className="text-brand-400 underline">Terms of Service</Link> and{' '}
+              <Link to="/risk" target="_blank" className="text-brand-400 underline">Risk Disclosure</Link>.
             </span>
           </label>
 

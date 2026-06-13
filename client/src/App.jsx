@@ -10,6 +10,9 @@ import TraderProfile from './pages/TraderProfile';
 import TraderDashboard from './pages/TraderDashboard';
 import FollowerDashboard from './pages/FollowerDashboard';
 import SignalFeed from './pages/SignalFeed';
+import TrackRecord from './pages/TrackRecord';
+import { Terms, Privacy, RiskDisclosure } from './pages/Legal';
+import { Settings, ForgotPassword, ResetPassword } from './pages/Account';
 
 function PrivateRoute({ children, role }) {
   const { user, loading } = useAuth();
@@ -29,6 +32,15 @@ function AppRoutes() {
         <Route path="/register" element={<Register />} />
         <Route path="/traders" element={<BrowseTraders />} />
         <Route path="/traders/:id" element={<TraderProfile />} />
+        <Route path="/track-record" element={<TrackRecord />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/risk" element={<RiskDisclosure />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/settings" element={
+          <PrivateRoute><Settings /></PrivateRoute>
+        } />
         <Route path="/dashboard" element={
           <PrivateRoute role="trader"><TraderDashboard /></PrivateRoute>
         } />

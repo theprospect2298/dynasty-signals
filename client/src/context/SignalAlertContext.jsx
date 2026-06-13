@@ -75,6 +75,7 @@ export function SignalAlertProvider({ children }) {
       try {
         const data = JSON.parse(e.data);
         if (data.type === 'signal') pushAlert(data);
+        if (data.type === 'signal_closed') pushAlert({ ...data, kind: 'closed' });
       } catch { /* heartbeat or malformed */ }
     };
     return () => es.close();
@@ -89,6 +90,7 @@ export function SignalAlertProvider({ children }) {
   // Dev/demo hook: window.__testSignalAlert() fires a sample popup
   useEffect(() => {
     window.__testSignalAlert = (overrides = {}) => pushAlert({
+      kind: overrides.kind,
       signal: {
         asset: 'NVDA', action: 'BUY', entry_price: 850, target_price: 950,
         stop_loss: 820, timeframe: 'Swing',

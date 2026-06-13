@@ -174,6 +174,11 @@ router.put('/:id/close', ...requireRole('trader'), (req, res) => {
   `).run(winRate, Math.round(totalReturn * 10) / 10, closedSignals.length, profile.id);
 
   const updated = db.prepare('SELECT * FROM signals WHERE id = ?').get(req.params.id);
+
+  // Fan out the result: live popup + push + email + Telegram
+  const { notifySignalClosed } = require('../notifications');
+  notifySignalClosed(updated, profile.id, req.user).catch(err => console.error('[notify]', err.message));
+
   res.json(updated);
 });
 

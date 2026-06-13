@@ -84,7 +84,7 @@ export default function Landing() {
                 <Link to="/register" className="btn-primary text-base px-10 py-3.5 shadow-[0_0_20px_rgba(45,212,191,0.3)] hover:shadow-[0_0_35px_rgba(45,212,191,0.45)] transition-shadow">
                   Start Free Trial →
                 </Link>
-                <Link to="/traders" className="btn-secondary text-base px-10 py-3.5">
+                <Link to="/track-record" className="btn-secondary text-base px-10 py-3.5">
                   View Track Record
                 </Link>
               </>
@@ -209,7 +209,7 @@ export default function Landing() {
                   </div>
                 ))}
               </div>
-              <Link to="/traders" className="btn-primary w-full text-center block mt-6 text-sm">View Full Track Record →</Link>
+              <Link to="/track-record" className="btn-primary w-full text-center block mt-6 text-sm">View Full Track Record →</Link>
             </div>
           </div>
         </div>
@@ -304,10 +304,13 @@ export default function Landing() {
               <Logo className="w-7 h-7" />
               <span className="font-bold text-white">Dynasty <span className="text-brand-400">Signals</span></span>
             </div>
-            <div className="flex gap-6 text-sm text-gray-500">
-              <Link to="/traders" className="hover:text-white transition-colors">Track Record</Link>
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
+              <Link to="/track-record" className="hover:text-white transition-colors">Track Record</Link>
               <Link to="/register" className="hover:text-white transition-colors">Sign Up</Link>
               <Link to="/login" className="hover:text-white transition-colors">Login</Link>
+              <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
+              <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+              <Link to="/risk" className="hover:text-white transition-colors">Risk Disclosure</Link>
             </div>
           </div>
           <div className="border-t border-gray-800 pt-6">
