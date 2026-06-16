@@ -1,0 +1,39 @@
+{
+  "schedules": [
+    {
+      "skill": "morning-brief",
+      "cron": "0 6 * * *",
+      "description": "Daily at 6AM"
+    },
+    {
+      "skill": "capture-processor",
+      "cron": "0 20 * * *",
+      "description": "Daily at 8PM"
+    },
+    {
+      "skill": "connection-finder",
+      "cron": "0 23 * * *",
+      "description": "Nightly at 11PM"
+    },
+    {
+      "skill": "weekly-synthesis",
+      "cron": "0 19 * * 0",
+      "description": "Sunday at 7PM"
+    },
+    {
+      "skill": "belief-tracker",
+      "cron": "0 8 * * 1",
+      "description": "Monday at 8AM"
+    },
+    {
+      "skill": "decision-intelligence",
+      "cron": "0 9 * * 1",
+      "description": "Monday at 9AM — Part B review"
+    },
+    {
+      "skill": "pattern-detector",
+      "cron": "0 8 1 * *",
+      "description": "1st of month at 8AM"
+    }
+  ]
+}

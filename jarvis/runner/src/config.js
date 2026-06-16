@@ -1,0 +1,69 @@
+'use strict';
+
+const path = require('path');
+const fs = require('fs');
+require('dotenv').config();
+
+function bool(v, def) {
+  if (v === undefined || v === '') return def;
+  return /^(1|true|yes|on)$/i.test(String(v).trim());
+}
+
+function int(v, def) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? n : def;
+}
+
+// Vault defaults to the vault bundled next to this runner (../../vault).
+const defaultVault = path.resolve(__dirname, '..', '..', 'vault');
+const vaultPath = path.resolve(process.env.VAULT_PATH || defaultVault);
+
+const config = {
+  modelProvider: process.env.MODEL_PROVIDER || 'anthropic',
+  modelName: process.env.MODEL_NAME || 'claude-opus-4-8',
+  apiKey: process.env.ANTHROPIC_API_KEY || '',
+  maxTokens: int(process.env.MAX_TOKENS, 8000),
+  maxToolIterations: int(process.env.MAX_TOOL_ITERATIONS, 60),
+
+  vaultPath,
+  skillsPath: path.join(vaultPath, '07-SYSTEM', 'skills'),
+  claudeMdPath: path.join(vaultPath, '07-SYSTEM', 'CLAUDE.md'),
+  memoryPath:
+    process.env.MEMORY_PATH ||
+    path.join(vaultPath, '07-SYSTEM', 'memory', 'jarvis.db'),
+  outputPath:
+    process.env.OUTPUT_PATH || path.join(vaultPath, '04-JARVIS-OUTPUTS'),
+  writeScope: (process.env.WRITE_SCOPE || 'vault').toLowerCase(),
+
+  enableScheduler: bool(process.env.ENABLE_SCHEDULER, true),
+  timezone: process.env.SCHEDULER_TIMEZONE || 'UTC',
+  schedulesPath: path.resolve(__dirname, '..', '..', 'config', 'schedules.json'),
+
+  enableWebSearch: bool(process.env.ENABLE_WEB_SEARCH, true),
+  webSearchMaxUses: int(process.env.WEB_SEARCH_MAX_USES, 5),
+
+  retryEnabled: bool(process.env.SKILL_RETRY_ENABLED, true),
+  retryMax: int(process.env.SKILL_RETRY_MAX, 3),
+  retryDelaySec: int(process.env.SKILL_RETRY_DELAY, 300),
+
+  notificationGateway: (process.env.NOTIFICATION_GATEWAY || 'none').toLowerCase(),
+  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
+  telegramChatId: process.env.TELEGRAM_CHAT_ID || '',
+};
+
+function validate() {
+  const problems = [];
+  if (!config.apiKey) problems.push('ANTHROPIC_API_KEY is not set.');
+  if (!fs.existsSync(config.vaultPath)) {
+    problems.push(`Vault path does not exist: ${config.vaultPath}`);
+  }
+  if (!fs.existsSync(config.claudeMdPath)) {
+    problems.push(`CLAUDE.md not found at: ${config.claudeMdPath}`);
+  }
+  if (!fs.existsSync(config.skillsPath)) {
+    problems.push(`Skills folder not found at: ${config.skillsPath}`);
+  }
+  return problems;
+}
+
+module.exports = { config, validate };

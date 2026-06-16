@@ -1,0 +1,14 @@
+# Secrets
+runner/.env
+
+# Dependencies
+runner/node_modules/
+
+# Memory database (personal, regenerated at runtime)
+vault/07-SYSTEM/memory/*.db
+vault/07-SYSTEM/memory/*.db-wal
+vault/07-SYSTEM/memory/*.db-shm
+
+# Generated personal outputs — uncomment to keep your own vault private.
+# Left tracked here so the scaffold ships with example folders intact.
+# vault/04-JARVIS-OUTPUTS/**/*.md

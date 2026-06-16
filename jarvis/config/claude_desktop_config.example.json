@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "jarvis-vault": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/yourname/JARVIS-VAULT"
+      ]
+    }
+  }
+}
