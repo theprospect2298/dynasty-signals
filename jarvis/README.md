@@ -84,6 +84,11 @@ The runner is a drop-in alternative to the guide's Hermes Agent — it shares th
 same `.env` keys, the same `config/schedules.json`, and keeps the memory DB
 inside your vault at `07-SYSTEM/memory/jarvis.db`.
 
+> **Running it for real (24/7):** `npm start` only fires skills while the process
+> is alive, so run it on a machine that's awake at 6 AM / 8 PM — your Mac or a
+> small always-on server, not an ephemeral cloud session. See **`DEPLOY.md`** for
+> the exact Mac + `pm2` setup (auto-restart on reboot, keeping the Mac awake).
+
 ## The build schedule (one weekend)
 
 - **Sat morning (3h):** Install tools. Set up the vault. Connect Claude Desktop via
