@@ -11,7 +11,7 @@ async function main() {
     const skills = availableSkills();
     console.log('Available skills:');
     for (const s of skills) console.log('  - ' + s);
-    console.log('\nUsage: npm run -- <skill-name>   (e.g. npm run -- morning-brief)');
+    console.log('\nUsage: node src/cli.js <skill-name>   (e.g. node src/cli.js morning-brief)');
     return;
   }
 

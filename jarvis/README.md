@@ -76,7 +76,7 @@ For the unattended 6 AM brief / 8 PM filing / etc. See **`runner/README.md`**.
 cd jarvis/runner
 npm install
 cp .env.example .env        # set ANTHROPIC_API_KEY, VAULT_PATH, timezone, Telegram
-npm run -- morning-brief    # test one skill
+node src/cli.js morning-brief   # test one skill
 npm start                   # start the full schedule
 ```
 

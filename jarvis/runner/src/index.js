@@ -27,7 +27,7 @@ function main() {
     const tasks = scheduler.start();
     log(`Scheduler running with ${tasks.length} task(s). Ctrl-C to stop.`);
   } else {
-    log('ENABLE_SCHEDULER is false. Use "npm run -- <skill>" to run skills manually.');
+    log('ENABLE_SCHEDULER is false. Use "node src/cli.js <skill>" to run skills manually.');
   }
 
   // Keep the process alive.

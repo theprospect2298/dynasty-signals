@@ -53,9 +53,9 @@ npm start
 Run a single skill immediately (great for testing and for the Day-1 build):
 
 ```bash
-npm run -- morning-brief
-npm run -- capture-processor
-npm run list           # list skill names
+node src/cli.js morning-brief
+node src/cli.js capture-processor
+node src/cli.js list           # list skill names
 ```
 
 ## Safety
