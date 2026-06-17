@@ -32,13 +32,13 @@ function snapshot() {
   lines.push('╠══ running ══════════════════════════════════════════');
   if (running.length === 0) lines.push('║ (idle — no active workers)');
   for (const t of running) {
-    lines.push(`║ ▶ #${t.id} ${t.worker}  ${elapsed(t.started_at)}  ${payloadHint(t)}`);
+    lines.push(`║ ▶ #${t.id} d${t.depth} ${t.worker}  ${elapsed(t.started_at)}  ${payloadHint(t)}`);
   }
   lines.push('╠══ recent ═══════════════════════════════════════════');
   if (recent.length === 0) lines.push('║ (nothing finished yet)');
   for (const t of recent) {
     const mark = t.status === 'done' ? '✓' : '✗';
-    lines.push(`║ ${mark} #${t.id} ${t.worker}  $${(t.cost_usd || 0).toFixed(3)}  ${payloadHint(t)}`);
+    lines.push(`║ ${mark} #${t.id} d${t.depth} ${t.worker}  $${(t.cost_usd || 0).toFixed(3)}  ${payloadHint(t)}`);
   }
   lines.push('╚═════════════════════════════════════════════════════');
   return lines.join('\n');

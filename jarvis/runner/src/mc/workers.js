@@ -3,6 +3,7 @@
 const fs = require('fs');
 const { config } = require('../config');
 const { runAgentDetailed } = require('../anthropic');
+const queue = require('./queue');
 
 // ---- Shared agent framing -------------------------------------------------
 
@@ -54,10 +55,11 @@ const registry = {
   'client-finder': {
     description:
       'Finds qualified prospect brands (with public emails + a real intent trigger) for a niche.',
+    chainTo: ['brand-research'],
     system: (cmd) =>
       baseSystem(
         [
-          'ROLE: Client-Finder.',
+          'ROLE: Client-Finder (pipeline stage 1 of 3).',
           'Given a niche (and optional location), find qualified prospect brands that',
           'fit Carlos\'s offer (motion + web for physical-product / local brands).',
           'For each brand collect: name, website, a PUBLIC, citable email, and a REAL',
@@ -67,6 +69,10 @@ const registry = {
           'Output a markdown table with columns:',
           '| Brand | Website | Public Email | Intent Trigger | Source URL |',
           'Save to: 05-RESOURCES/leads/[DATE]-[niche].md (create folders as needed).',
+          'PIPELINE: for EACH qualified brand you save, call the enqueue_task tool',
+          'with worker="brand-research" and payload {"brand": <name>, "website": <url>}',
+          'so it gets deep-researched automatically. Do this once per lead, after you',
+          'have verified the lead is worth pursuing.',
           'Store memory tagged: client-finder, [niche], [DATE].',
         ],
         cmd
@@ -84,10 +90,11 @@ const registry = {
   'brand-research': {
     description:
       'Deep-researches one brand: trigger, decision-maker, contact, and the best angle.',
+    chainTo: ['outreach-drafter'],
     system: (cmd) =>
       baseSystem(
         [
-          'ROLE: Brand-Research.',
+          'ROLE: Brand-Research (pipeline stage 2 of 3).',
           'Given one brand, produce a tight research note Carlos can act on:',
           '- What they do / product, and why they fit the offer',
           '- The strongest current intent trigger (with source URL + date if possible)',
@@ -95,6 +102,10 @@ const registry = {
           '- Recommended angle: lead with web, motion, or a bundle — and the hook',
           '- Any red flags (in-house team, tiny budget signals, recently rebranded)',
           'Save to: 05-RESOURCES/leads/research/[brand].md',
+          'PIPELINE: if (and only if) the brand is a genuine fit with no dealbreaker',
+          'red flags, call the enqueue_task tool with worker="outreach-drafter" and',
+          'payload {"brand": <name>, "angle": <your recommended angle>} to queue a',
+          'draft. If it is NOT a fit, do not enqueue — just note why in the research.',
           'Store memory tagged: brand-research, [brand], [DATE].',
         ],
         cmd
@@ -109,6 +120,7 @@ const registry = {
   'outreach-drafter': {
     description:
       'Writes an on-brand cold outreach draft for one researched brand (for review, not auto-send).',
+    chainTo: [],
     system: (cmd) =>
       baseSystem(
         [
@@ -149,26 +161,91 @@ function estimateCost(usage) {
   return +(inUsd + outUsd).toFixed(4);
 }
 
+// Build the scoped enqueue_task tool for a task, or null if this worker is a
+// pipeline leaf. The handler enforces: forward-only chain, depth cap, fan-out cap.
+function buildChainer(task, worker) {
+  const allowed = worker.chainTo || [];
+  if (allowed.length === 0) return null;
+  const depth = task.depth || 0;
+  let children = 0;
+
+  const toolDef = {
+    name: 'enqueue_task',
+    description:
+      `Queue a follow-up task for the next pipeline stage. Allowed worker(s): ${allowed.join(', ')}. ` +
+      'Call once per item you want handed off downstream.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        worker: { type: 'string', description: `Downstream worker, one of: ${allowed.join(', ')}.` },
+        payload: { type: 'object', description: 'Task payload for that worker.' },
+      },
+      required: ['worker'],
+    },
+  };
+
+  const handler = async (input) => {
+    const w = input.worker;
+    if (!allowed.includes(w)) {
+      return JSON.stringify({ error: `Not allowed to enqueue "${w}". Allowed: ${allowed.join(', ')}.` });
+    }
+    if (depth + 1 > config.mc.maxDepth) {
+      return JSON.stringify({ error: 'Max pipeline depth reached; not enqueued.' });
+    }
+    if (children >= config.mc.maxChildrenPerTask) {
+      return JSON.stringify({ error: 'Per-task child limit reached; not enqueued.' });
+    }
+    children += 1;
+    const id = queue.enqueue(w, input.payload || {}, task.priority || 5, {
+      parent_id: task.id,
+      root_id: task.root_id || task.id,
+      depth: depth + 1,
+    });
+    return JSON.stringify({ queued: id, worker: w });
+  };
+
+  return { toolDef, handler };
+}
+
 // Execute a task with its worker. Returns { result, cost }.
 async function run(task) {
   const worker = registry[task.worker];
   if (!worker) throw new Error(`Unknown worker: ${task.worker}`);
   const dc = dateContext();
+  const chainer = buildChainer(task, worker);
 
   if (config.mc.dryRun) {
-    // Simulate work without spending: brief delay + canned result.
-    await new Promise((r) => setTimeout(r, 800 + Math.random() * 1200));
+    // Simulate work (and the downstream handoff) without spending.
+    await new Promise((r) => setTimeout(r, 600 + Math.random() * 900));
+    let spawned = 0;
+    if (chainer) {
+      const n = task.worker === 'client-finder' ? 3 : 1;
+      for (let i = 0; i < n; i++) {
+        const res = await chainer.handler({
+          worker: worker.chainTo[0],
+          payload: { brand: `DemoBrand-${task.id}-${i}` },
+        });
+        if (!JSON.parse(res).error) spawned += 1;
+      }
+    }
     return {
-      result: `[DRY RUN] ${task.worker} would process ${JSON.stringify(task.payload)}`,
+      result:
+        `[DRY RUN] ${task.worker} processed ${JSON.stringify(task.payload)}` +
+        (spawned ? ` → queued ${spawned} ${worker.chainTo[0]} task(s)` : ''),
       cost: 0,
     };
   }
 
   const claudeMd = readClaudeMd();
-  const { text, usage } = await runAgentDetailed({
+  const opts = {
     system: worker.system(claudeMd),
     userPrompt: worker.prompt(task.payload, dc),
-  });
+  };
+  if (chainer) {
+    opts.extraTools = [chainer.toolDef];
+    opts.dispatchExtra = { enqueue_task: chainer.handler };
+  }
+  const { text, usage } = await runAgentDetailed(opts);
   return { result: text, cost: estimateCost(usage) };
 }
 

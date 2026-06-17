@@ -128,8 +128,13 @@ function ok(data) {
 }
 
 // Execute a client tool call and return a string result for the tool_result block.
-async function dispatch(name, input) {
+// `extra` is an optional map of name -> async(input) handlers contributed for a
+// single run (e.g. Mission Control's enqueue_task), checked before the built-ins.
+async function dispatch(name, input, extra) {
   input = input || {};
+  if (extra && typeof extra[name] === 'function') {
+    return extra[name](input);
+  }
   switch (name) {
     case 'list_directory':
       return ok(fsTool.listDirectory(input.path || '.'));
@@ -162,9 +167,11 @@ async function dispatch(name, input) {
   }
 }
 
-// Append the Anthropic server-side web search tool when enabled.
-function buildTools() {
+// Append the Anthropic server-side web search tool when enabled, plus any
+// per-run extra tool definitions (e.g. Mission Control's enqueue_task).
+function buildTools(extraTools) {
   const tools = [...toolDefs];
+  if (Array.isArray(extraTools)) tools.push(...extraTools);
   if (config.enableWebSearch) {
     tools.push({
       type: 'web_search_20250305',

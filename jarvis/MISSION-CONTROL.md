@@ -73,6 +73,51 @@ MC_DRY_RUN=true node src/cli.js mc start
 You'll see tasks dispatch and complete in parallel with `$0.000` cost. When it
 looks right, drop `MC_DRY_RUN` (or set it `false`) to do real work.
 
+## Auto-chaining (the self-driving pipeline)
+
+You don't queue each stage by hand. The workers hand off to each other:
+
+```
+  client-finder ──(per lead)──▶ brand-research ──(if a fit)──▶ outreach-drafter
+     depth 0                        depth 1                        depth 2
+```
+
+- **client-finder**, for each qualified lead it saves, queues a **brand-research**
+  task for that brand.
+- **brand-research**, when the brand is a genuine fit (no dealbreakers), queues an
+  **outreach-drafter** task with its recommended angle.
+- **outreach-drafter** is the end of the line — it drafts and stops.
+
+So you queue **one** thing and the rest cascades:
+
+```bash
+node src/cli.js mc enqueue client-finder '{"niche":"med spas","count":10,"location":"Miami"}'
+node src/cli.js mc start
+```
+
+One med-spa task becomes ~10 research tasks becomes ~N drafts — all in parallel,
+all written to your vault, with each draft waiting for your review.
+
+### Why it can't run away
+Chaining is **forward-only and capped**:
+
+- Each worker may only queue its *one* designated next stage (enforced in code,
+  not by the prompt) — no loops, no sideways spawning.
+- **`MC_MAX_DEPTH`** (default 4) hard-stops the cascade depth.
+- **`MC_MAX_CHILDREN`** (default 25) caps how many follow-ups one task can spawn.
+- The **daily budget cap** still governs the whole thing — when spend crosses
+  `MC_DAILY_BUDGET_USD`, dispatch pauses regardless of how much is queued.
+
+Every task records its `parent_id`, `root_id`, and `depth`, so you can always
+trace a draft back to the lead and the original niche that produced it.
+
+Test the whole cascade for free first:
+```bash
+MC_DRY_RUN=true node src/cli.js mc enqueue client-finder '{"niche":"med spas"}'
+MC_DRY_RUN=true node src/cli.js mc start
+```
+You'll see depth `d0 → d1 → d2` tasks fan out and complete at `$0.000`.
+
 ## How it fits with the scheduler
 
 - `node src/index.js` (a.k.a. `npm start`) = the **scheduled** 7 skills.

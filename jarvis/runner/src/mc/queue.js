@@ -22,20 +22,46 @@ function init() {
       result TEXT,
       error TEXT,
       cost_usd REAL DEFAULT 0,
+      parent_id INTEGER,
+      root_id INTEGER,
+      depth INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       started_at TEXT,
       finished_at TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
   `);
+  // Migrate older databases that predate the pipeline columns.
+  for (const col of ['parent_id INTEGER', 'root_id INTEGER', 'depth INTEGER NOT NULL DEFAULT 0']) {
+    try {
+      db.exec(`ALTER TABLE tasks ADD COLUMN ${col}`);
+    } catch {
+      /* column already exists */
+    }
+  }
   return db;
 }
 
-function enqueue(worker, payload = {}, priority = 5) {
+// meta: { parent_id, root_id, depth } for pipeline tracking.
+function enqueue(worker, payload = {}, priority = 5, meta = {}) {
   init();
   const info = db
-    .prepare('INSERT INTO tasks (worker, payload, priority) VALUES (?, ?, ?)')
-    .run(worker, JSON.stringify(payload), priority);
+    .prepare(
+      `INSERT INTO tasks (worker, payload, priority, parent_id, root_id, depth)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      worker,
+      JSON.stringify(payload),
+      priority,
+      meta.parent_id ?? null,
+      meta.root_id ?? null,
+      meta.depth ?? 0
+    );
+  // A root task is its own root.
+  if (meta.root_id == null) {
+    db.prepare('UPDATE tasks SET root_id = id WHERE id = ?').run(info.lastInsertRowid);
+  }
   return info.lastInsertRowid;
 }
 

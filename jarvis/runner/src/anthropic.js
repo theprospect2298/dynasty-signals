@@ -18,9 +18,10 @@ async function runAgent(args) {
 }
 
 // Same loop, but also returns accumulated token usage for budget tracking.
-async function runAgentDetailed({ system, userPrompt }) {
+// extraTools / dispatchExtra let a single run add tools (e.g. enqueue_task).
+async function runAgentDetailed({ system, userPrompt, extraTools, dispatchExtra }) {
   const anthropic = getClient();
-  const tools = buildTools();
+  const tools = buildTools(extraTools);
   const messages = [{ role: 'user', content: userPrompt }];
 
   let finalText = '';
@@ -60,7 +61,7 @@ async function runAgentDetailed({ system, userPrompt }) {
     const toolResults = [];
     for (const tu of toolUses) {
       try {
-        const result = await dispatch(tu.name, tu.input);
+        const result = await dispatch(tu.name, tu.input, dispatchExtra);
         toolResults.push({
           type: 'tool_result',
           tool_use_id: tu.id,

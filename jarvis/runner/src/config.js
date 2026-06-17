@@ -66,6 +66,10 @@ const config = {
       path.join(vaultPath, '04-JARVIS-OUTPUTS', 'mission-control', 'status.md'),
     // Dry run: workers return a stub instead of calling the API (no cost).
     dryRun: bool(process.env.MC_DRY_RUN, false),
+    // Auto-chaining guardrails: how deep a pipeline may go, and how many
+    // follow-up tasks one worker may spawn.
+    maxDepth: int(process.env.MC_MAX_DEPTH, 4),
+    maxChildrenPerTask: int(process.env.MC_MAX_CHILDREN, 25),
   },
 };
 
