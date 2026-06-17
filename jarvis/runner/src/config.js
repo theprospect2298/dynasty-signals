@@ -49,6 +49,24 @@ const config = {
   notificationGateway: (process.env.NOTIFICATION_GATEWAY || 'none').toLowerCase(),
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
   telegramChatId: process.env.TELEGRAM_CHAT_ID || '',
+
+  // ---- Mission Control (parallel worker orchestrator) ----
+  mc: {
+    dbPath:
+      process.env.MC_DB_PATH ||
+      path.join(vaultPath, '07-SYSTEM', 'memory', 'mission-control.db'),
+    maxConcurrent: int(process.env.MC_MAX_CONCURRENT, 3),
+    pollSeconds: int(process.env.MC_POLL_SECONDS, 5),
+    dailyBudgetUsd: parseFloat(process.env.MC_DAILY_BUDGET_USD || '5'),
+    // Estimated price per million tokens (override per your plan/model).
+    priceInputPerMTok: parseFloat(process.env.MC_PRICE_INPUT_PER_MTOK || '15'),
+    priceOutputPerMTok: parseFloat(process.env.MC_PRICE_OUTPUT_PER_MTOK || '75'),
+    statusFile:
+      process.env.MC_STATUS_FILE ||
+      path.join(vaultPath, '04-JARVIS-OUTPUTS', 'mission-control', 'status.md'),
+    // Dry run: workers return a stub instead of calling the API (no cost).
+    dryRun: bool(process.env.MC_DRY_RUN, false),
+  },
 };
 
 function validate() {

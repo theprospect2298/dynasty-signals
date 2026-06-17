@@ -13,12 +13,18 @@ function getClient() {
 
 // Run an agentic tool-use loop until the model stops requesting client tools.
 // Returns the concatenated final assistant text.
-async function runAgent({ system, userPrompt }) {
+async function runAgent(args) {
+  return (await runAgentDetailed(args)).text;
+}
+
+// Same loop, but also returns accumulated token usage for budget tracking.
+async function runAgentDetailed({ system, userPrompt }) {
   const anthropic = getClient();
   const tools = buildTools();
   const messages = [{ role: 'user', content: userPrompt }];
 
   let finalText = '';
+  const usage = { input_tokens: 0, output_tokens: 0 };
 
   for (let iteration = 0; iteration < config.maxToolIterations; iteration++) {
     const response = await anthropic.messages.create({
@@ -28,6 +34,11 @@ async function runAgent({ system, userPrompt }) {
       tools,
       messages,
     });
+
+    if (response.usage) {
+      usage.input_tokens += response.usage.input_tokens || 0;
+      usage.output_tokens += response.usage.output_tokens || 0;
+    }
 
     // Capture any text the model produced this turn.
     const textBlocks = response.content
@@ -40,7 +51,7 @@ async function runAgent({ system, userPrompt }) {
     const toolUses = response.content.filter((b) => b.type === 'tool_use');
 
     if (response.stop_reason !== 'tool_use' || toolUses.length === 0) {
-      return finalText.trim();
+      return { text: finalText.trim(), usage };
     }
 
     // Record the assistant turn verbatim, then answer every tool_use.
@@ -71,7 +82,7 @@ async function runAgent({ system, userPrompt }) {
   }
 
   warn(`Hit MAX_TOOL_ITERATIONS (${config.maxToolIterations}); returning partial output.`);
-  return finalText.trim();
+  return { text: finalText.trim(), usage };
 }
 
 function shortArgs(input) {
@@ -79,4 +90,4 @@ function shortArgs(input) {
   return s.length > 80 ? s.slice(0, 77) + '...' : s;
 }
 
-module.exports = { runAgent };
+module.exports = { runAgent, runAgentDetailed };

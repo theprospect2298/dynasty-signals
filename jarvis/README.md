@@ -72,6 +72,12 @@ For talking to your vault on demand ("Morning brief", "Find connections").
 ### B. Automated — the bundled runner (recommended for the schedule)
 For the unattended 6 AM brief / 8 PM filing / etc. See **`runner/README.md`**.
 
+### C. Mission Control — always-on parallel worker agents
+A separate, on-demand crew that runs specialized agents **in parallel** when
+there's work in its queue (find leads, research brands, draft outreach), with a
+live dashboard, a daily budget cap, and Telegram alerts. See
+**`MISSION-CONTROL.md`**. Quick start: `node src/cli.js mc demo && node src/cli.js mc start`.
+
 ```bash
 cd jarvis/runner
 npm install

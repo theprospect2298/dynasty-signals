@@ -15,7 +15,74 @@ async function main() {
     console.log('\nUsage: node src/cli.js <skill-name>   (e.g. node src/cli.js morning-brief)');
     console.log('Helpers: node src/cli.js notify-test   (send a test Telegram message)');
     console.log('         node src/cli.js chat-id       (find your Telegram chat id)');
+    console.log('\nMission Control (parallel workers):');
+    console.log('  node src/cli.js mc start              (run the always-on orchestrator)');
+    console.log('  node src/cli.js mc status            (one-shot status snapshot)');
+    console.log('  node src/cli.js mc workers           (list worker agents)');
+    console.log("  node src/cli.js mc enqueue <worker> '<json>'   (queue a task)");
+    console.log('  node src/cli.js mc demo              (queue a starter batch of lead-finding tasks)');
     return;
+  }
+
+  // ---- Mission Control commands ----
+  if (arg === 'mc') {
+    const sub = process.argv[3];
+    const queue = require('./mc/queue');
+    const workers = require('./mc/workers');
+
+    if (sub === 'workers') {
+      console.log('Worker agents:');
+      for (const w of workers.list()) console.log(`  - ${w.name}: ${w.description}`);
+      return;
+    }
+    if (sub === 'status') {
+      const dashboard = require('./mc/dashboard');
+      console.log(dashboard.snapshot());
+      return;
+    }
+    if (sub === 'enqueue') {
+      const worker = process.argv[4];
+      let payload = {};
+      try {
+        payload = process.argv[5] ? JSON.parse(process.argv[5]) : {};
+      } catch (e) {
+        error(`Payload must be valid JSON: ${e.message}`);
+        process.exit(1);
+      }
+      if (!workers.registry[worker]) {
+        error(`Unknown worker "${worker}". Try: ${workers.list().map((w) => w.name).join(', ')}`);
+        process.exit(1);
+      }
+      const id = queue.enqueue(worker, payload, payload.priority || 5);
+      log(`Queued task #${id} for ${worker}.`);
+      return;
+    }
+    if (sub === 'demo') {
+      const seed = [
+        ['client-finder', { niche: 'boutique fitness studios / gyms', count: 12, location: 'South Florida' }],
+        ['client-finder', { niche: 'specialty coffee & cafés', count: 12, location: 'South Florida' }],
+        ['client-finder', { niche: 'physical-product e-commerce brands (Shopify)', count: 12 }],
+      ];
+      for (const [w, p] of seed) {
+        const id = queue.enqueue(w, p, 5);
+        log(`Queued #${id} ${w} (${p.niche}).`);
+      }
+      log('Now run: node src/cli.js mc start');
+      return;
+    }
+    if (sub === 'start') {
+      const problems = validate();
+      if (problems.length) {
+        error('Configuration problems:');
+        for (const p of problems) error('  - ' + p);
+        process.exit(1);
+      }
+      const orchestrator = require('./mc/orchestrator');
+      await orchestrator.start();
+      return;
+    }
+    error('Unknown mc command. Try: start | status | workers | enqueue | demo');
+    process.exit(1);
   }
 
   // Print any chat ids that have messaged your bot (run after you message it).
