@@ -3,7 +3,7 @@
 const { config, validate } = require('./config');
 const memory = require('./memory');
 const scheduler = require('./scheduler');
-const { log, error } = require('./logger');
+const { log, warn, error } = require('./logger');
 
 function main() {
   const problems = validate();
@@ -32,9 +32,17 @@ function main() {
 
   // Two-way Telegram control bot (phone remote).
   if (config.enableBot && config.telegramBotToken && config.telegramChatId) {
+    log('Starting Telegram control bot.');
     require('./bot')
       .start()
       .catch((e) => error('Telegram bot crashed: ' + e.message));
+  } else if (config.enableBot) {
+    warn(
+      'Telegram bot NOT started — missing ' +
+        (!config.telegramBotToken ? 'TELEGRAM_BOT_TOKEN ' : '') +
+        (!config.telegramChatId ? 'TELEGRAM_CHAT_ID' : '') +
+        '. Set them as environment variables and redeploy.'
+    );
   }
 
   // Optionally run Mission Control in the same process (useful on a server).
