@@ -7,7 +7,13 @@ const { log, warn } = require('./logger');
 
 let client = null;
 function getClient() {
-  if (!client) client = new Anthropic({ apiKey: config.apiKey });
+  if (!client) {
+    client = new Anthropic({
+      apiKey: config.apiKey,
+      maxRetries: 4, // retry transient network/5xx errors
+      timeout: 10 * 60 * 1000, // 10 min ceiling per request
+    });
+  }
   return client;
 }
 
@@ -28,13 +34,17 @@ async function runAgentDetailed({ system, userPrompt, extraTools, dispatchExtra 
   const usage = { input_tokens: 0, output_tokens: 0 };
 
   for (let iteration = 0; iteration < config.maxToolIterations; iteration++) {
-    const response = await anthropic.messages.create({
-      model: config.modelName,
-      max_tokens: config.maxTokens,
-      system,
-      tools,
-      messages,
-    });
+    // Stream the response to keep the connection alive on long generations
+    // (a plain create() can hit "premature close" on slow turns / proxies).
+    const response = await anthropic.messages
+      .stream({
+        model: config.modelName,
+        max_tokens: config.maxTokens,
+        system,
+        tools,
+        messages,
+      })
+      .finalMessage();
 
     if (response.usage) {
       usage.input_tokens += response.usage.input_tokens || 0;
