@@ -15,6 +15,7 @@ async function main() {
     console.log('\nUsage: node src/cli.js <skill-name>   (e.g. node src/cli.js morning-brief)');
     console.log('Helpers: node src/cli.js notify-test   (send a test Telegram message)');
     console.log('         node src/cli.js chat-id       (find your Telegram chat id)');
+    console.log('         node src/cli.js bot           (run the two-way Telegram control bot)');
     console.log('\nMission Control (parallel workers):');
     console.log('  node src/cli.js mc start              (run the always-on orchestrator)');
     console.log('  node src/cli.js mc status            (one-shot status snapshot)');
@@ -115,6 +116,18 @@ async function main() {
     }
     console.log('\nPut the number above into TELEGRAM_CHAT_ID in .env.');
     process.exit(0);
+  }
+
+  // Run only the two-way Telegram control bot.
+  if (arg === 'bot') {
+    const problems = validate();
+    if (problems.length) {
+      error('Configuration problems:');
+      for (const p of problems) error('  - ' + p);
+      process.exit(1);
+    }
+    await require('./bot').start();
+    return;
   }
 
   // Send a one-off test notification through the configured gateway.

@@ -72,6 +72,14 @@ For talking to your vault on demand ("Morning brief", "Find connections").
 ### B. Automated — the bundled runner (recommended for the schedule)
 For the unattended 6 AM brief / 8 PM filing / etc. See **`runner/README.md`**.
 
+### D. Phone-only — Telegram control bot + cloud host
+Run Jarvis entirely from your phone, with the computer off. A **two-way Telegram
+bot** lets you text commands (`/brief`, `/capture <note>`, `/find <niche>`,
+`/status`), and a **cloud deploy** keeps it running 24/7. The bot starts
+automatically with `npm start` (when Telegram is configured); to run only the
+bot use `node src/cli.js bot`. To get off your Mac entirely, see
+**`DEPLOY-CLOUD.md`** (Railway / Render, with a persistent volume).
+
 ### C. Mission Control — always-on parallel worker agents
 A separate, on-demand crew that runs specialized agents **in parallel** when
 there's work in its queue (find leads, research brands, draft outreach), with a

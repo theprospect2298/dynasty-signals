@@ -1,0 +1,25 @@
+# One-click-ish deploy on Render (https://render.com).
+# A background worker that runs Jarvis 24/7 with a persistent disk.
+services:
+  - type: worker
+    name: jarvis
+    runtime: docker
+    dockerfilePath: ./jarvis/Dockerfile
+    dockerContext: ./jarvis
+    plan: starter            # background workers require a paid plan (~$7/mo)
+    autoDeploy: true
+    disk:
+      name: jarvis-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false           # set in the dashboard (secret)
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: SCHEDULER_TIMEZONE
+        value: America/New_York
+      - key: MC_DAILY_BUDGET_USD
+        value: "5"

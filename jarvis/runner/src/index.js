@@ -30,6 +30,21 @@ function main() {
     log('ENABLE_SCHEDULER is false. Use "node src/cli.js <skill>" to run skills manually.');
   }
 
+  // Two-way Telegram control bot (phone remote).
+  if (config.enableBot && config.telegramBotToken && config.telegramChatId) {
+    require('./bot')
+      .start()
+      .catch((e) => error('Telegram bot crashed: ' + e.message));
+  }
+
+  // Optionally run Mission Control in the same process (useful on a server).
+  if (config.enableMissionControl) {
+    log('ENABLE_MISSION_CONTROL is true — starting the worker orchestrator.');
+    require('./mc/orchestrator')
+      .start()
+      .catch((e) => error('Mission Control crashed: ' + e.message));
+  }
+
   // Keep the process alive.
   process.stdin.resume();
   process.on('SIGINT', () => {

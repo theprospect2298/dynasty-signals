@@ -57,11 +57,20 @@ function payloadHint(t) {
   return bits.length ? `(${bits.join(', ')})` : '';
 }
 
-// Print to console (clearing first for a live feel).
+// Print to console. On a TTY, clear+redraw for a live feel; on a server (no
+// TTY, e.g. cloud logs) emit a compact one-liner instead of screen-clearing.
 function render() {
   const out = snapshot();
-  process.stdout.write('\x1b[2J\x1b[H');
-  process.stdout.write(out + '\n');
+  if (process.stdout.isTTY) {
+    process.stdout.write('\x1b[2J\x1b[H');
+    process.stdout.write(out + '\n');
+  } else {
+    const c = queue.counts();
+    console.log(
+      `[MC] queued ${c.queued} running ${c.running}/${config.mc.maxConcurrent} ` +
+        `done ${c.done} failed ${c.failed} spend ~$${queue.todayCost().toFixed(2)}`
+    );
+  }
   writeStatusFile(out);
 }
 

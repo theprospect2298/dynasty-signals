@@ -36,6 +36,8 @@ const config = {
   writeScope: (process.env.WRITE_SCOPE || 'vault').toLowerCase(),
 
   enableScheduler: bool(process.env.ENABLE_SCHEDULER, true),
+  enableBot: bool(process.env.ENABLE_TELEGRAM_BOT, true),
+  enableMissionControl: bool(process.env.ENABLE_MISSION_CONTROL, false),
   timezone: process.env.SCHEDULER_TIMEZONE || 'UTC',
   schedulesPath: path.resolve(__dirname, '..', '..', 'config', 'schedules.json'),
 
