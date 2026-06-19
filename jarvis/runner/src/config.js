@@ -20,7 +20,9 @@ const vaultPath = path.resolve(process.env.VAULT_PATH || defaultVault);
 
 const config = {
   modelProvider: process.env.MODEL_PROVIDER || 'anthropic',
-  modelName: process.env.MODEL_NAME || 'claude-opus-4-8',
+  // Default to a fast model so long agentic runs (brief, workers) finish well
+  // under the API's per-request ceiling. Override with MODEL_NAME if desired.
+  modelName: process.env.MODEL_NAME || 'claude-sonnet-4-6',
   apiKey: process.env.ANTHROPIC_API_KEY || '',
   maxTokens: int(process.env.MAX_TOKENS, 4096),
   maxToolIterations: int(process.env.MAX_TOOL_ITERATIONS, 60),
@@ -42,7 +44,7 @@ const config = {
   schedulesPath: path.resolve(__dirname, '..', '..', 'config', 'schedules.json'),
 
   enableWebSearch: bool(process.env.ENABLE_WEB_SEARCH, true),
-  webSearchMaxUses: int(process.env.WEB_SEARCH_MAX_USES, 3),
+  webSearchMaxUses: int(process.env.WEB_SEARCH_MAX_USES, 2),
 
   retryEnabled: bool(process.env.SKILL_RETRY_ENABLED, true),
   retryMax: int(process.env.SKILL_RETRY_MAX, 3),
