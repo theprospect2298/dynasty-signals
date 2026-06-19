@@ -22,7 +22,7 @@ const config = {
   modelProvider: process.env.MODEL_PROVIDER || 'anthropic',
   modelName: process.env.MODEL_NAME || 'claude-opus-4-8',
   apiKey: process.env.ANTHROPIC_API_KEY || '',
-  maxTokens: int(process.env.MAX_TOKENS, 8000),
+  maxTokens: int(process.env.MAX_TOKENS, 4096),
   maxToolIterations: int(process.env.MAX_TOOL_ITERATIONS, 60),
 
   vaultPath,
@@ -42,7 +42,7 @@ const config = {
   schedulesPath: path.resolve(__dirname, '..', '..', 'config', 'schedules.json'),
 
   enableWebSearch: bool(process.env.ENABLE_WEB_SEARCH, true),
-  webSearchMaxUses: int(process.env.WEB_SEARCH_MAX_USES, 5),
+  webSearchMaxUses: int(process.env.WEB_SEARCH_MAX_USES, 3),
 
   retryEnabled: bool(process.env.SKILL_RETRY_ENABLED, true),
   retryMax: int(process.env.SKILL_RETRY_MAX, 3),

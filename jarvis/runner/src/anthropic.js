@@ -5,6 +5,27 @@ const { config } = require('./config');
 const { dispatch, buildTools } = require('./tools');
 const { log, warn } = require('./logger');
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// One streamed turn, with extra retries for transient connection drops
+// ("premature close", resets, etc.) that the SDK doesn't always catch.
+async function streamWithRetry(anthropic, params, attempts = 4) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await anthropic.messages.stream(params).finalMessage();
+    } catch (e) {
+      lastErr = e;
+      const msg = e && e.message ? e.message : String(e);
+      const transient = /premature close|terminated|econnreset|fetch failed|socket|network|timeout|stream/i.test(msg);
+      if (!transient) throw e;
+      warn(`API call attempt ${i + 1}/${attempts} dropped (${msg}); retrying…`);
+      await sleep(2000 * (i + 1));
+    }
+  }
+  throw lastErr;
+}
+
 let client = null;
 function getClient() {
   if (!client) {
@@ -34,17 +55,15 @@ async function runAgentDetailed({ system, userPrompt, extraTools, dispatchExtra 
   const usage = { input_tokens: 0, output_tokens: 0 };
 
   for (let iteration = 0; iteration < config.maxToolIterations; iteration++) {
-    // Stream the response to keep the connection alive on long generations
-    // (a plain create() can hit "premature close" on slow turns / proxies).
-    const response = await anthropic.messages
-      .stream({
-        model: config.modelName,
-        max_tokens: config.maxTokens,
-        system,
-        tools,
-        messages,
-      })
-      .finalMessage();
+    // Stream the response (keeps the connection alive on long generations) with
+    // retries for transient drops.
+    const response = await streamWithRetry(anthropic, {
+      model: config.modelName,
+      max_tokens: config.maxTokens,
+      system,
+      tools,
+      messages,
+    });
 
     if (response.usage) {
       usage.input_tokens += response.usage.input_tokens || 0;
