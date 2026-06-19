@@ -43,7 +43,9 @@ const config = {
   timezone: process.env.SCHEDULER_TIMEZONE || 'UTC',
   schedulesPath: path.resolve(__dirname, '..', '..', 'config', 'schedules.json'),
 
-  enableWebSearch: bool(process.env.ENABLE_WEB_SEARCH, true),
+  // Web search runs server-side and can stall long agentic runs; off by default
+  // for reliability. Re-enable with ENABLE_WEB_SEARCH=true once stable.
+  enableWebSearch: bool(process.env.ENABLE_WEB_SEARCH, false),
   webSearchMaxUses: int(process.env.WEB_SEARCH_MAX_USES, 2),
 
   retryEnabled: bool(process.env.SKILL_RETRY_ENABLED, true),

@@ -32,7 +32,7 @@ function getClient() {
     client = new Anthropic({
       apiKey: config.apiKey,
       maxRetries: 4, // retry transient network/5xx errors
-      timeout: 10 * 60 * 1000, // 10 min ceiling per request
+      timeout: 5 * 60 * 1000, // 5 min ceiling per request — fail fast, then retry
     });
   }
   return client;
